@@ -1,0 +1,7 @@
+{
+  "name": "JARVIS Private AI",
+  "description": "Enterprise-grade private AI infrastructure with governance, agent safety, and document ingestion.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
