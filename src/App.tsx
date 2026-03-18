@@ -91,7 +91,10 @@ import {
   Brain,
   Globe,
   Laptop,
-  Box
+  Box,
+  Github,
+  GitBranch,
+  Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Node, Agent, AuditLog, Document as JarvisDocument, ScheduledTask, CostEntry, Subscription, ErrorLog, User as JarvisUser, MatrixRoute, SecurityVulnerability, PortStatus, AgentProof, ToolUsage, PolicyViolation } from './types';
@@ -266,7 +269,13 @@ const INITIAL_AGENTS: Agent[] = [
     ],
     policyViolations: [INITIAL_POLICY_VIOLATIONS[2]],
     securityScore: 72,
-    lastSecurityScan: '2026-03-18 04:00'
+    lastSecurityScan: '2026-03-18 04:00',
+    networkActivity: {
+      totalConnections: 12,
+      dataTransferredIn: '1.2 GB',
+      dataTransferredOut: '450 MB',
+      blockedAttempts: 3
+    }
   },
   { 
     id: 'a2', 
@@ -285,7 +294,13 @@ const INITIAL_AGENTS: Agent[] = [
     vulnerabilities: [],
     policyViolations: [INITIAL_POLICY_VIOLATIONS[0]],
     securityScore: 95,
-    lastSecurityScan: '2026-03-18 03:30'
+    lastSecurityScan: '2026-03-18 03:30',
+    networkActivity: {
+      totalConnections: 8,
+      dataTransferredIn: '120 MB',
+      dataTransferredOut: '45 MB',
+      blockedAttempts: 0
+    }
   },
   { 
     id: 'a3', 
@@ -307,7 +322,13 @@ const INITIAL_AGENTS: Agent[] = [
     ],
     policyViolations: [INITIAL_POLICY_VIOLATIONS[1]],
     securityScore: 64,
-    lastSecurityScan: '2026-03-18 02:15'
+    lastSecurityScan: '2026-03-18 02:15',
+    networkActivity: {
+      totalConnections: 45,
+      dataTransferredIn: '4.5 GB',
+      dataTransferredOut: '2.1 GB',
+      blockedAttempts: 12
+    }
   },
 ];
 
@@ -657,8 +678,19 @@ const AgentPerformanceChart = ({ cpu, memory, theme }: { cpu: number, memory: nu
   );
 };
 
-const CodeView = ({ theme }: { theme: 'light' | 'dark' }) => {
+const CodeView = ({ 
+  theme, 
+  isGithubConnected, 
+  setIsGithubConnected, 
+  githubRepos 
+}: { 
+  theme: 'light' | 'dark',
+  isGithubConnected: boolean,
+  setIsGithubConnected: (val: boolean) => void,
+  githubRepos: { name: string, stars: number, language: string }[]
+}) => {
   const [selectedFile, setSelectedFile] = useState('agent_orchestrator.ts');
+  const [viewMode, setViewMode] = useState<'local' | 'github'>('local');
   
   const files = [
     { name: 'agent_orchestrator.ts', size: '12.4 KB', type: 'typescript', lastEdit: '2h ago', content: `/**
@@ -727,31 +759,99 @@ class UnraidMount:
       <div className={`lg:col-span-1 border rounded-2xl overflow-hidden flex flex-col ${
         theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
       }`}>
-        <div className={`p-4 border-b text-[10px] font-mono uppercase opacity-50 ${
+        <div className={`p-4 border-b text-[10px] font-mono uppercase opacity-50 flex items-center justify-between ${
           theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'
         }`}>
-          Repository Explorer
+          <span>Repository Explorer</span>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setViewMode('local')}
+              className={`px-2 py-0.5 rounded transition-all ${viewMode === 'local' ? 'bg-emerald-500/20 text-emerald-500' : 'opacity-50'}`}
+            >
+              Local
+            </button>
+            <button 
+              onClick={() => setViewMode('github')}
+              className={`px-2 py-0.5 rounded transition-all ${viewMode === 'github' ? 'bg-blue-500/20 text-blue-500' : 'opacity-50'}`}
+            >
+              GitHub
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {files.map(file => (
-            <button
-              key={file.name}
-              onClick={() => setSelectedFile(file.name)}
-              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                selectedFile === file.name
-                  ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
-                  : (theme === 'light' ? 'hover:bg-[#141414]/5' : 'hover:bg-white/5')
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <FileCode className="w-4 h-4 opacity-50" />
-                <div className="text-left">
-                  <p className="text-xs font-bold font-mono">{file.name}</p>
-                  <p className="text-[8px] opacity-50 uppercase">{file.size} • {file.lastEdit}</p>
+          {viewMode === 'local' ? (
+            files.map(file => (
+              <button
+                key={file.name}
+                onClick={() => setSelectedFile(file.name)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                  selectedFile === file.name
+                    ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                    : (theme === 'light' ? 'hover:bg-[#141414]/5' : 'hover:bg-white/5')
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <FileCode className="w-4 h-4 opacity-50" />
+                  <div className="text-left">
+                    <p className="text-xs font-bold font-mono">{file.name}</p>
+                    <p className="text-[8px] opacity-50 uppercase">{file.size} • {file.lastEdit}</p>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            ))
+          ) : (
+            <div className="space-y-4 p-2">
+              {!isGithubConnected ? (
+                <div className="text-center py-8 space-y-4">
+                  <Github className="w-12 h-12 mx-auto opacity-20" />
+                  <p className="text-[10px] font-mono uppercase opacity-50">GitHub not connected</p>
+                  <button 
+                    onClick={() => setIsGithubConnected(true)}
+                    className={`w-full py-2 rounded-xl text-[10px] font-bold uppercase border transition-all ${
+                      theme === 'light' ? 'border-[#141414] bg-[#141414] text-[#E4E3E0]' : 'border-emerald-500 bg-emerald-500 text-[#0A0A0A]'
+                    }`}
+                  >
+                    Connect Account
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[10px] font-mono uppercase opacity-50">Your Repositories</p>
+                    <button 
+                      onClick={() => setIsGithubConnected(false)}
+                      className="text-[8px] font-mono uppercase opacity-30 hover:opacity-100"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                  {githubRepos.map(repo => (
+                    <button
+                      key={repo.name}
+                      className={`w-full flex flex-col p-3 rounded-xl border transition-all ${
+                        theme === 'light' ? 'bg-white border-[#141414]/10 hover:border-[#141414]' : 'bg-white/5 border-white/10 hover:border-emerald-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <div className="flex items-center gap-2">
+                          <GitBranch className="w-3 h-3 opacity-50" />
+                          <span className="text-xs font-bold font-mono">{repo.name}</span>
+                        </div>
+                        <ExternalLink className="w-3 h-3 opacity-30" />
+                      </div>
+                      <div className="flex items-center gap-3 opacity-50">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-2.5 h-2.5" />
+                          <span className="text-[10px]">{repo.stars}</span>
+                        </div>
+                        <span className="text-[10px] font-mono">{repo.language}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div className={`lg:col-span-3 border rounded-2xl overflow-hidden flex flex-col ${
@@ -943,8 +1043,14 @@ export default function App() {
   // Wizard State
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [selectedAgentForSecurity, setSelectedAgentForSecurity] = useState<Agent | null>(null);
-  const [modalTab, setModalTab] = useState<'security' | 'api'>('security');
+  const [modalTab, setModalTab] = useState<'security' | 'api' | 'violations' | 'network'>('security');
   const [scanningAgentId, setScanningAgentId] = useState<string | null>(null);
+  const [isGithubConnected, setIsGithubConnected] = useState(false);
+  const [githubRepos, setGithubRepos] = useState([
+    { name: 'jarvis-core', stars: 124, language: 'TypeScript' },
+    { name: 'brain-node', stars: 89, language: 'Python' },
+    { name: 'matrix-router', stars: 45, language: 'Go' }
+  ]);
 
   const handleScanNow = (agentId: string) => {
     setScanningAgentId(agentId);
@@ -1535,15 +1641,21 @@ export default function App() {
                       >
                         <div className="space-y-2">
                           <p className="text-[9px] font-mono uppercase opacity-50">Task Priority</p>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             {(['low', 'medium', 'high'] as const).map(p => (
                               <button
                                 key={p}
                                 onClick={() => setTaskPriority(p)}
-                                className={`flex-1 py-1 rounded border text-[9px] font-mono uppercase transition-all ${
-                                  taskPriority === p ? 'bg-indigo-500 border-indigo-500 text-white' : theme === 'dark' ? 'border-white/10 opacity-50' : 'border-[#141414]/10 opacity-50'
+                                className={`flex-1 py-1.5 rounded-lg border text-[9px] font-mono uppercase transition-all flex flex-col items-center gap-1 ${
+                                  taskPriority === p 
+                                    ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
+                                    : theme === 'dark' ? 'border-white/10 bg-white/5 opacity-50 hover:opacity-100' : 'border-[#141414]/10 bg-white opacity-50 hover:opacity-100'
                                 }`}
                               >
+                                <div className={`w-1.5 h-1.5 rounded-full ${
+                                  p === 'high' ? 'bg-rose-500' : 
+                                  p === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
+                                } ${taskPriority === p ? 'ring-2 ring-white/50' : ''}`} />
                                 {p}
                               </button>
                             ))}
@@ -1551,13 +1663,15 @@ export default function App() {
                         </div>
                         <div className="space-y-2">
                           <p className="text-[9px] font-mono uppercase opacity-50">Retry Strategy</p>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             {(['none', 'exponential', 'aggressive'] as const).map(s => (
                               <button
                                 key={s}
                                 onClick={() => setRetryStrategy(s)}
-                                className={`flex-1 py-1 rounded border text-[9px] font-mono uppercase transition-all ${
-                                  retryStrategy === s ? 'bg-indigo-500 border-indigo-500 text-white' : theme === 'dark' ? 'border-white/10 opacity-50' : 'border-[#141414]/10 opacity-50'
+                                className={`flex-1 py-1.5 rounded-lg border text-[9px] font-mono uppercase transition-all ${
+                                  retryStrategy === s 
+                                    ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
+                                    : theme === 'dark' ? 'border-white/10 bg-white/5 opacity-50 hover:opacity-100' : 'border-[#141414]/10 bg-white opacity-50 hover:opacity-100'
                                 }`}
                               >
                                 {s}
@@ -2348,7 +2462,12 @@ export default function App() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <CodeView theme={theme} />
+                <CodeView 
+                  theme={theme} 
+                  isGithubConnected={isGithubConnected}
+                  setIsGithubConnected={setIsGithubConnected}
+                  githubRepos={githubRepos}
+                />
               </motion.div>
             )}
 
@@ -2933,6 +3052,52 @@ export default function App() {
                       <p className="text-sm opacity-70">Manage node authentication and secure routing between distributed endpoints.</p>
                       <button className={`text-xs font-bold underline ${theme === 'light' ? 'text-[#141414]' : 'text-emerald-500'}`}>Configure Network</button>
                     </div>
+                    <div className={`p-6 border rounded-2xl space-y-4 ${
+                      theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                    }`}>
+                      <h4 className="font-bold tracking-tight flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Github className="w-4 h-4" /> GitHub Connectivity
+                        </div>
+                        {isGithubConnected && (
+                          <span className="text-[8px] font-mono uppercase bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded border border-emerald-500/20">Connected</span>
+                        )}
+                      </h4>
+                      <p className="text-sm opacity-70">Connect JARVIS to your repositories to allow code analysis and automated PR reviews.</p>
+                      <button 
+                        onClick={() => setIsGithubConnected(!isGithubConnected)}
+                        className={`text-xs font-bold px-4 py-2 rounded-xl border transition-all ${
+                          isGithubConnected 
+                            ? (theme === 'light' ? 'border-rose-500 text-rose-500 hover:bg-rose-500 hover:text-white' : 'border-rose-500/50 text-rose-500 hover:bg-rose-500 hover:text-white')
+                            : (theme === 'light' ? 'border-[#141414] bg-[#141414] text-[#E4E3E0]' : 'border-emerald-500 bg-emerald-500 text-[#0A0A0A]')
+                        }`}
+                      >
+                        {isGithubConnected ? 'Disconnect GitHub' : 'Connect GitHub Account'}
+                      </button>
+                      
+                      {isGithubConnected && (
+                        <div className="pt-4 space-y-2">
+                          <p className="text-[10px] font-mono uppercase opacity-50">Active Repositories</p>
+                          <div className="space-y-1">
+                            {githubRepos.map(repo => (
+                              <div key={repo.name} className={`flex items-center justify-between p-2 rounded-lg ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                                <div className="flex items-center gap-2">
+                                  <GitBranch className="w-3 h-3 opacity-50" />
+                                  <span className="text-xs font-mono">{repo.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1 opacity-50">
+                                    <Star className="w-3 h-3" />
+                                    <span className="text-[10px]">{repo.stars}</span>
+                                  </div>
+                                  <span className="text-[10px] opacity-30">{repo.language}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </section>
               </motion.div>
@@ -3006,9 +3171,31 @@ export default function App() {
                     <motion.div layoutId="modalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />
                   )}
                 </button>
+                <button 
+                  onClick={() => setModalTab('violations')}
+                  className={`pb-4 text-xs font-mono uppercase font-bold transition-all relative ${
+                    modalTab === 'violations' ? 'text-amber-500' : 'opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  Policy Violations
+                  {modalTab === 'violations' && (
+                    <motion.div layoutId="modalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500" />
+                  )}
+                </button>
+                <button 
+                  onClick={() => setModalTab('network')}
+                  className={`pb-4 text-xs font-mono uppercase font-bold transition-all relative ${
+                    modalTab === 'network' ? 'text-blue-500' : 'opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  Network Activity
+                  {modalTab === 'network' && (
+                    <motion.div layoutId="modalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                  )}
+                </button>
               </div>
 
-              {modalTab === 'security' ? (
+              {modalTab === 'security' && (
                 <>
                   <div className="grid grid-cols-2 gap-6 mb-8">
                 <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
@@ -3089,42 +3276,11 @@ export default function App() {
                     )}
                   </div>
                 </section>
-
-                <section>
-                  <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2 text-amber-500">
-                    <History className="w-3 h-3" />
-                    Policy Violations & Anomalies
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedAgentForSecurity.policyViolations?.map((violation) => (
-                      <div key={violation.id} className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-3">
-                        <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5" />
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <p className="text-sm font-bold text-amber-500">{violation.type}</p>
-                            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 uppercase">
-                              {violation.severity}
-                            </span>
-                          </div>
-                          <p className="text-[11px] opacity-70 mt-1">{violation.description}</p>
-                          <div className="flex justify-between items-center mt-2 text-[9px] font-mono opacity-50">
-                            <span>Status: {violation.status}</span>
-                            <span>{violation.timestamp}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {(!selectedAgentForSecurity.policyViolations || selectedAgentForSecurity.policyViolations.length === 0) && (
-                      <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-3">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        <p className="text-sm font-bold text-emerald-500">No policy violations recorded</p>
-                      </div>
-                    )}
-                  </div>
-                </section>
               </div>
               </>
-              ) : (
+              )}
+
+              {modalTab === 'api' && (
                 <div className="space-y-6">
                   <section>
                     <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2 text-emerald-500">
@@ -3167,6 +3323,113 @@ export default function App() {
                       {toolUsage.filter(u => u.agentId === selectedAgentForSecurity.id).length === 0 && (
                         <div className="p-8 text-center opacity-30 italic font-mono text-sm">
                           No tool telemetry recorded for this agent.
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {modalTab === 'violations' && (
+                <div className="space-y-6">
+                  <section>
+                    <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2 text-amber-500">
+                      <History className="w-3 h-3" />
+                      Policy Violations & Anomalies
+                    </h3>
+                    <div className="space-y-2">
+                      {selectedAgentForSecurity.policyViolations?.map((violation) => (
+                        <div key={violation.id} className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-3">
+                          <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <p className="text-sm font-bold text-amber-500">{violation.type}</p>
+                              <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 uppercase">
+                                {violation.severity}
+                              </span>
+                            </div>
+                            <p className="text-[11px] opacity-70 mt-1">{violation.description}</p>
+                            <div className="flex justify-between items-center mt-2 text-[9px] font-mono opacity-50">
+                              <span>Status: {violation.status}</span>
+                              <span>{violation.timestamp}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(!selectedAgentForSecurity.policyViolations || selectedAgentForSecurity.policyViolations.length === 0) && (
+                        <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-3">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <p className="text-sm font-bold text-emerald-500">No policy violations recorded</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {modalTab === 'network' && (
+                <div className="space-y-6">
+                  <section>
+                    <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2 text-blue-500">
+                      <Globe className="w-3 h-3" />
+                      Network Connection Metrics
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                        <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Total Connections</p>
+                        <p className="text-2xl font-bold">{selectedAgentForSecurity.networkActivity?.totalConnections || 0}</p>
+                      </div>
+                      <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                        <p className="text-[10px] font-mono uppercase opacity-50 mb-1 text-rose-500">Blocked Attempts</p>
+                        <p className="text-2xl font-bold text-rose-500">{selectedAgentForSecurity.networkActivity?.blockedAttempts || 0}</p>
+                      </div>
+                      <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                        <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Data Inbound</p>
+                        <p className="text-2xl font-bold text-emerald-500">{selectedAgentForSecurity.networkActivity?.dataTransferredIn || '0 B'}</p>
+                      </div>
+                      <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                        <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Data Outbound</p>
+                        <p className="text-2xl font-bold text-blue-500">{selectedAgentForSecurity.networkActivity?.dataTransferredOut || '0 B'}</p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2 text-emerald-500">
+                      <ArrowRightLeft className="w-3 h-3" />
+                      Matrix Routing Correlation
+                    </h3>
+                    <div className={`border rounded-xl overflow-hidden transition-colors ${
+                      theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                    }`}>
+                      <div className={`grid grid-cols-4 p-4 border-b text-[10px] font-mono uppercase opacity-50 ${
+                        theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
+                      }`}>
+                        <div>Destination</div>
+                        <div>Policy</div>
+                        <div>Latency</div>
+                        <div className="text-right">Status</div>
+                      </div>
+                      {matrixRoutes.filter(r => r.source === selectedAgentForSecurity.name).map(route => (
+                        <div key={route.id} className={`grid grid-cols-4 p-4 border-b last:border-0 transition-colors items-center ${
+                          theme === 'light' ? 'border-[#141414]/10 hover:bg-[#141414]/5' : 'border-white/10 hover:bg-white/5'
+                        }`}>
+                          <div className="text-xs font-bold">{route.destination}</div>
+                          <div className="text-[10px] opacity-50 italic truncate pr-2">{route.policy}</div>
+                          <div className="text-[10px] font-mono">{route.latency}ms</div>
+                          <div className="text-right">
+                            <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                              route.status === 'routed' ? 'bg-emerald-500/10 text-emerald-500' : 
+                              route.status === 'blocked' ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500'
+                            }`}>
+                              {route.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {matrixRoutes.filter(r => r.source === selectedAgentForSecurity.name).length === 0 && (
+                        <div className="p-8 text-center opacity-30 italic font-mono text-sm">
+                          No active matrix routes for this agent.
                         </div>
                       )}
                     </div>

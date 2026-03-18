@@ -26,6 +26,13 @@ export interface PolicyViolation {
   status: 'logged' | 'investigating' | 'resolved';
 }
 
+export interface NetworkActivity {
+  totalConnections: number;
+  dataTransferredIn: string;
+  dataTransferredOut: string;
+  blockedAttempts: number;
+}
+
 export interface Agent {
   id: string;
   name: string;
@@ -45,6 +52,7 @@ export interface Agent {
   policyViolations?: PolicyViolation[];
   securityScore?: number; // 0-100
   lastSecurityScan?: string;
+  networkActivity?: NetworkActivity;
 }
 
 export interface ToolUsage {
