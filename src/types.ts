@@ -9,11 +9,21 @@ export interface Service {
 export interface Node {
   id: string;
   name: string;
-  type: 'Brain' | 'Gateway' | 'Endpoint' | 'Sandbox';
+  type: 'Brain' | 'Gateway' | 'Endpoint' | 'Sandbox' | 'Storage';
   hardware: string;
   status: NodeStatus;
   ip: string;
   services: Service[];
+  lastSeen: string;
+}
+
+export interface PolicyViolation {
+  id: string;
+  timestamp: string;
+  type: string;
+  severity: 'low' | 'medium' | 'high';
+  description: string;
+  status: 'logged' | 'investigating' | 'resolved';
 }
 
 export interface Agent {
@@ -25,6 +35,25 @@ export interface Agent {
   classification: number;
   model: string;
   lastInvocation: string;
+  health: number; // 0-100
+  progress?: number; // 0-100
+  cpuUsage?: number; // 0-100
+  memoryUsage?: number; // 0-100
+  estimatedCompletion?: string;
+  activeTask?: string;
+  vulnerabilities?: SecurityVulnerability[];
+  policyViolations?: PolicyViolation[];
+  securityScore?: number; // 0-100
+  lastSecurityScan?: string;
+}
+
+export interface ToolUsage {
+  id: string;
+  agentId: string;
+  toolName: string;
+  count: number;
+  lastUsed: string;
+  parameters: string; // JSON string of last parameters
 }
 
 export interface AuditLog {

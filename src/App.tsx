@@ -21,7 +21,6 @@ import {
 import { 
   LayoutDashboard, 
   MessageSquare, 
-  ShieldCheck, 
   Users, 
   FileText, 
   Settings, 
@@ -29,7 +28,6 @@ import {
   Cpu, 
   Network, 
   Lock,
-  AlertTriangle,
   ChevronRight,
   Terminal,
   Zap,
@@ -52,25 +50,51 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Shield,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
+  AlertCircle,
+  AlertOctagon,
+  Key,
+  Fingerprint,
+  History,
+  Info,
   Wrench,
   DollarSign,
   TrendingUp,
   ZapOff,
-  AlertCircle,
   Bug,
+  Search,
+  Filter,
+  Download,
+  Share2,
+  Trash2,
+  Edit3,
+  ExternalLink,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  MoreVertical,
+  MoreHorizontal,
+  Bell,
+  Mail,
+  HelpCircle,
+  LogOut,
+  ShieldQuestion,
   UserPlus,
   ArrowRightLeft,
-  Search,
-  ShieldAlert,
-  Fingerprint,
   Scan,
   Unlock,
   FileCode,
   Server,
-  TerminalSquare
+  TerminalSquare,
+  Brain,
+  Globe,
+  Laptop,
+  Box
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Node, Agent, AuditLog, Document as JarvisDocument, ScheduledTask, CostEntry, Subscription, ErrorLog, User, MatrixRoute, SecurityVulnerability, PortStatus, AgentProof } from './types';
+import { Node, Agent, AuditLog, Document as JarvisDocument, ScheduledTask, CostEntry, Subscription, ErrorLog, User as JarvisUser, MatrixRoute, SecurityVulnerability, PortStatus, AgentProof, ToolUsage, PolicyViolation } from './types';
 import { chatWithJarvis } from './services/gemini';
 
 // --- Mock Data ---
@@ -87,7 +111,8 @@ const INITIAL_NODES: Node[] = [
       { name: 'vLLM', status: 'online' },
       { name: 'Postgres', status: 'degraded' },
       { name: 'Redis', status: 'online' }
-    ] 
+    ],
+    lastSeen: '2026-03-17T13:40:00Z'
   },
   { 
     id: 'n4', 
@@ -100,7 +125,23 @@ const INITIAL_NODES: Node[] = [
       { name: 'DeepSeek-V3', status: 'online' },
       { name: 'VectorDB', status: 'online' },
       { name: 'Training Engine', status: 'online' }
-    ] 
+    ],
+    lastSeen: '2026-03-17T13:41:00Z'
+  },
+  { 
+    id: 'n7', 
+    name: 'Unraid Storage', 
+    type: 'Storage', 
+    hardware: 'Custom Xeon (128GB, 120TB Array)', 
+    status: 'online', 
+    ip: '100.64.0.7', 
+    services: [
+      { name: 'NFS/SMB', status: 'online' },
+      { name: 'Plex', status: 'online' },
+      { name: 'Docker Host', status: 'online' },
+      { name: 'Parity Check', status: 'online' }
+    ],
+    lastSeen: '2026-03-17T13:42:00Z'
   },
   { 
     id: 'n2', 
@@ -113,7 +154,8 @@ const INITIAL_NODES: Node[] = [
       { name: 'Nginx', status: 'online' },
       { name: 'Tailscale', status: 'online' },
       { name: 'Policy Engine', status: 'online' }
-    ] 
+    ],
+    lastSeen: '2026-03-17T13:38:00Z'
   },
   { 
     id: 'n5', 
@@ -126,7 +168,8 @@ const INITIAL_NODES: Node[] = [
       { name: 'Code Interpreter', status: 'online' },
       { name: 'Web Browser', status: 'online' },
       { name: 'File System', status: 'online' }
-    ] 
+    ],
+    lastSeen: '2026-03-17T13:42:40Z'
   },
   { 
     id: 'n3', 
@@ -139,7 +182,8 @@ const INITIAL_NODES: Node[] = [
       { name: 'React Dashboard', status: 'online' },
       { name: 'TTS/STT', status: 'error' },
       { name: 'Avatar Engine', status: 'online' }
-    ] 
+    ],
+    lastSeen: '2026-03-17T13:35:00Z'
   },
   { 
     id: 'n6', 
@@ -151,7 +195,8 @@ const INITIAL_NODES: Node[] = [
     services: [
       { name: 'Mobile UI', status: 'online' },
       { name: 'Local Cache', status: 'online' }
-    ] 
+    ],
+    lastSeen: '2026-03-16T22:00:00Z'
   },
 ];
 
@@ -161,7 +206,7 @@ const INITIAL_ERROR_LOGS: ErrorLog[] = [
   { id: 'e3', timestamp: '2026-03-16 16:05:22', source: 'vLLM', message: 'CUDA out of memory during long context inference', severity: 'critical', status: 'open' },
 ];
 
-const INITIAL_USERS: User[] = [
+const INITIAL_USERS: JarvisUser[] = [
   { id: 'u1', name: 'Ken Haas', email: 'kennethphaas@gmail.com', role: 'admin', status: 'active', lastLogin: '2026-03-16 16:20' },
   { id: 'u2', name: 'Ryleigh Haas', email: 'ryleigh@example.com', role: 'user', status: 'active', lastLogin: '2026-03-16 15:30' },
 ];
@@ -193,10 +238,84 @@ const INITIAL_AGENT_PROOFS: AgentProof[] = [
   { id: 'p3', agentId: 'a3', agentName: 'ResearchBot', action: 'Deployed New Scraper Module', stage: 'Production', hash: 'sha256:1a2b3c...d4e5', timestamp: '2026-03-16 16:00', changes: 'Added support for dynamic JS rendering via Playwright.' },
 ];
 
+const INITIAL_POLICY_VIOLATIONS: PolicyViolation[] = [
+  { id: 'pv1', timestamp: '2026-03-16 15:32:15', type: 'Unauthorized Tool Access', severity: 'high', description: 'Attempted to invoke lights_toggle without sufficient classification.', status: 'logged' },
+  { id: 'pv2', timestamp: '2026-03-16 12:45:00', type: 'Rate Limit Exceeded', severity: 'low', description: 'Exceeded 500 requests/min to Google Search API.', status: 'resolved' },
+  { id: 'pv3', timestamp: '2026-03-16 14:20:00', type: 'Data Leakage Warning', severity: 'medium', description: 'Potential PII detected in calculate_roi output buffer.', status: 'investigating' },
+];
+
 const INITIAL_AGENTS: Agent[] = [
-  { id: 'a1', name: 'FinanceAnalyzer', role: 'Financial Analyst', status: 'active', allowedTools: ['read_bank', 'calculate_roi'], classification: 30, model: 'Llama 3 (Local)', lastInvocation: '2026-03-16 14:20' },
-  { id: 'a2', name: 'HomeAutomator', role: 'Smart Home Controller', status: 'active', allowedTools: ['lights_toggle', 'temp_set'], classification: 20, model: 'Mistral (Local)', lastInvocation: '2026-03-16 15:10' },
-  { id: 'a3', name: 'ResearchBot', role: 'Web Researcher', status: 'active', allowedTools: ['google_search', 'web_scrape'], classification: 10, model: 'Gemini 3 Flash (Cloud)', lastInvocation: '2026-03-16 12:45' },
+  { 
+    id: 'a1', 
+    name: 'FinanceAnalyzer', 
+    role: 'Financial Analyst', 
+    status: 'active', 
+    allowedTools: ['read_bank', 'calculate_roi'], 
+    classification: 30, 
+    model: 'Llama 3 (Local)', 
+    lastInvocation: '2026-03-16 14:20',
+    health: 98,
+    progress: 45,
+    cpuUsage: 24,
+    memoryUsage: 62,
+    estimatedCompletion: '14:45',
+    activeTask: 'Analyzing Q1 Revenue',
+    vulnerabilities: [
+      { id: 'av1', severity: 'medium', title: 'Outdated ROI library (v2.1.0)', description: 'The ROI calculation library has a known precision bug in v2.1.0.', target: 'FinanceAnalyzer Module', status: 'open', detectedAt: '2026-03-15 09:00' },
+      { id: 'av2', severity: 'high', title: 'Unencrypted local cache', description: 'Local task cache is stored in plaintext on the Brain node.', target: 'FinanceAnalyzer Storage', status: 'open', detectedAt: '2026-03-15 10:30' }
+    ],
+    policyViolations: [INITIAL_POLICY_VIOLATIONS[2]],
+    securityScore: 72,
+    lastSecurityScan: '2026-03-18 04:00'
+  },
+  { 
+    id: 'a2', 
+    name: 'HomeAutomator', 
+    role: 'Smart Home Controller', 
+    status: 'active', 
+    allowedTools: ['lights_toggle', 'temp_set'], 
+    classification: 20, 
+    model: 'Mistral (Local)', 
+    lastInvocation: '2026-03-16 15:10',
+    health: 100,
+    progress: 100,
+    cpuUsage: 5,
+    memoryUsage: 12,
+    activeTask: 'Monitoring Sensors',
+    vulnerabilities: [],
+    policyViolations: [INITIAL_POLICY_VIOLATIONS[0]],
+    securityScore: 95,
+    lastSecurityScan: '2026-03-18 03:30'
+  },
+  { 
+    id: 'a3', 
+    name: 'ResearchBot', 
+    role: 'Web Researcher', 
+    status: 'active', 
+    allowedTools: ['google_search', 'web_scrape'], 
+    classification: 10, 
+    model: 'Gemini 3 Flash (Cloud)', 
+    lastInvocation: '2026-03-16 12:45',
+    health: 85,
+    progress: 12,
+    cpuUsage: 78,
+    memoryUsage: 45,
+    estimatedCompletion: '18:30',
+    activeTask: 'Scraping Quantum Papers',
+    vulnerabilities: [
+      { id: 'av3', severity: 'high', title: 'Potential XSS in web_scrape buffer', description: 'Scraped content is not properly sanitized before being passed to the model.', target: 'ResearchBot Scraper', status: 'open', detectedAt: '2026-03-16 11:00' }
+    ],
+    policyViolations: [INITIAL_POLICY_VIOLATIONS[1]],
+    securityScore: 64,
+    lastSecurityScan: '2026-03-18 02:15'
+  },
+];
+
+const INITIAL_TOOL_USAGE: ToolUsage[] = [
+  { id: 'tu1', agentId: 'a1', toolName: 'calculate_roi', count: 142, lastUsed: '2026-03-16 14:20', parameters: '{"investment": 50000, "period": "5y"}' },
+  { id: 'tu2', agentId: 'a1', toolName: 'read_bank', count: 28, lastUsed: '2026-03-16 14:15', parameters: '{"account": "savings", "limit": 100}' },
+  { id: 'tu3', agentId: 'a3', toolName: 'google_search', count: 850, lastUsed: '2026-03-16 12:45', parameters: '{"query": "quantum computing trends 2026"}' },
+  { id: 'tu4', agentId: 'a2', toolName: 'lights_toggle', count: 42, lastUsed: '2026-03-16 15:10', parameters: '{"room": "living_room", "state": "on"}' },
 ];
 
 const INITIAL_LOGS: AuditLog[] = [
@@ -263,9 +382,157 @@ const StatusBadge = ({ status, theme = 'light' }: { status: Node['status'], them
     degraded: theme === 'light' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   };
   return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider border ${colors[status]}`}>
+    <span className={`px-2 py-0.5 rounded-full text-[8px] font-mono uppercase tracking-wider border ${colors[status]}`}>
       {status}
     </span>
+  );
+};
+
+const getNodeIcon = (type: Node['type']) => {
+  switch (type) {
+    case 'Brain': return Brain;
+    case 'Gateway': return Globe;
+    case 'Endpoint': return Laptop;
+    case 'Sandbox': return Box;
+    case 'Storage': return HardDrive;
+    default: return Server;
+  }
+};
+
+const MeshView = ({ nodes, theme }: { nodes: Node[], theme: 'light' | 'dark' }) => {
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-serif italic text-3xl">Tailscale Mesh Topology</h3>
+          <p className="text-sm opacity-50 mt-1">Real-time mTLS encrypted peer-to-peer network visualization.</p>
+        </div>
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-mono uppercase font-bold">DERP Relay Active</span>
+          </div>
+        </div>
+      </div>
+
+      <div className={`relative h-[600px] rounded-3xl border overflow-hidden ${
+        theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-[#0A0A0A] border-white/10'
+      }`}>
+        {/* Grid Background */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ 
+          backgroundImage: `radial-gradient(${theme === 'light' ? '#141414' : '#fff'} 1px, transparent 1px)`, 
+          backgroundSize: '40px 40px' 
+        }} />
+
+        {/* SVG Connections */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          <defs>
+            <linearGradient id="meshGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+          {nodes.map((node, i) => (
+            nodes.slice(i + 1).map((peer, j) => {
+              const x1 = 15 + (i * 20) % 70;
+              const y1 = 20 + (i * 15) % 60;
+              const x2 = 15 + ((i + j + 1) * 20) % 70;
+              const y2 = 20 + ((i + j + 1) * 15) % 60;
+              return (
+                <g key={`${node.id}-${peer.id}`}>
+                  <motion.line
+                    x1={`${x1}%`}
+                    y1={`${y1}%`}
+                    x2={`${x2}%`}
+                    y2={`${y2}%`}
+                    stroke="url(#meshGradient)"
+                    strokeWidth="1"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 2, delay: i * 0.2 }}
+                  />
+                  <motion.circle
+                    r="2"
+                    fill="#10b981"
+                    animate={{ 
+                      cx: [`${x1}%`, `${x2}%`],
+                      cy: [`${y1}%`, `${y2}%`],
+                      opacity: [0, 1, 0]
+                    }}
+                    transition={{ 
+                      duration: 3, 
+                      repeat: Infinity, 
+                      delay: (i + j) * 0.5,
+                      ease: "linear"
+                    }}
+                  />
+                </g>
+              );
+            })
+          ))}
+        </svg>
+
+        {/* Node Points */}
+        <div className="absolute inset-0">
+          {nodes.map((node, i) => {
+            const NodeIcon = getNodeIcon(node.type);
+            const x = 15 + (i * 20) % 70;
+            const y = 20 + (i * 15) % 60;
+            return (
+              <motion.div
+                key={node.id}
+                style={{ left: `${x}%`, top: `${y}%` }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', damping: 12, delay: i * 0.1 }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+              >
+                <div className={`relative p-4 rounded-2xl border transition-all group-hover:scale-110 group-hover:shadow-2xl ${
+                  theme === 'light' 
+                    ? 'bg-white border-[#141414] shadow-lg' 
+                    : 'bg-[#141414] border-white/20 shadow-emerald-500/10'
+                }`}>
+                  <div className={`p-2 rounded-lg mb-2 ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-emerald-500/10'}`}>
+                    <NodeIcon className={`w-5 h-5 ${theme === 'light' ? 'text-[#141414]' : 'text-emerald-500'}`} />
+                  </div>
+                  <div className="text-center">
+                    <h5 className="text-[10px] font-bold tracking-tighter whitespace-nowrap">{node.name}</h5>
+                    <p className="text-[8px] font-mono opacity-50">{node.ip}</p>
+                  </div>
+                  
+                  {/* Status Indicator */}
+                  <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 ${
+                    theme === 'light' ? 'border-white' : 'border-[#141414]'
+                  } ${node.status === 'online' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Mesh Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Active Peers', value: nodes.length, icon: Users },
+          { label: 'Avg Latency', value: '14ms', icon: Activity },
+          { label: 'Encryption', value: 'WireGuard', icon: Lock },
+          { label: 'Relay Nodes', value: '2', icon: Globe },
+        ].map((stat, i) => (
+          <div key={i} className={`p-4 border rounded-xl flex items-center gap-4 ${
+            theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+          }`}>
+            <div className={`p-2 rounded-lg ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+              <stat.icon className="w-4 h-4 opacity-50" />
+            </div>
+            <div>
+              <p className="text-[8px] font-mono uppercase opacity-50">{stat.label}</p>
+              <p className="text-lg font-bold tracking-tighter">{stat.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
@@ -325,26 +592,372 @@ const ResourceGauge = ({ label, value, color, theme }: { label: string, value: n
   );
 };
 
+const AgentPerformanceChart = ({ cpu, memory, theme }: { cpu: number, memory: number, theme: 'light' | 'dark' }) => {
+  // Generate mock historical data based on current values
+  const data = Array.from({ length: 15 }).map((_, i) => ({
+    time: `${i}m ago`,
+    cpu: Math.max(0, Math.min(100, cpu + (Math.random() - 0.5) * 15)),
+    memory: Math.max(0, Math.min(100, memory + (Math.random() - 0.5) * 8)),
+  }));
+
+  return (
+    <div className="h-28 w-full mt-2">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+            </linearGradient>
+            <linearGradient id="colorMem" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(20,20,20,0.05)'} />
+          <XAxis dataKey="time" hide />
+          <YAxis hide domain={[0, 100]} />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: theme === 'dark' ? '#141414' : '#E4E3E0',
+              border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(20,20,20,0.1)',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontFamily: 'monospace',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+            }}
+            itemStyle={{ padding: '2px 0' }}
+            cursor={{ stroke: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(20,20,20,0.2)', strokeWidth: 1 }}
+          />
+          <Area 
+            type="monotone" 
+            dataKey="cpu" 
+            name="CPU"
+            stroke="#3b82f6" 
+            fillOpacity={1} 
+            fill="url(#colorCpu)" 
+            strokeWidth={2}
+            isAnimationActive={true}
+            animationDuration={1000}
+          />
+          <Area 
+            type="monotone" 
+            dataKey="memory" 
+            name="RAM"
+            stroke="#10b981" 
+            fillOpacity={1} 
+            fill="url(#colorMem)" 
+            strokeWidth={2}
+            isAnimationActive={true}
+            animationDuration={1200}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+const CodeView = ({ theme }: { theme: 'light' | 'dark' }) => {
+  const [selectedFile, setSelectedFile] = useState('agent_orchestrator.ts');
+  
+  const files = [
+    { name: 'agent_orchestrator.ts', size: '12.4 KB', type: 'typescript', lastEdit: '2h ago', content: `/**
+ * JARVIS Agent Orchestrator v3.2
+ * Handles multi-agent task distribution and mTLS mesh communication.
+ */
+import { MeshNode, AgentTask } from './mesh_types';
+import { SecurityLayer } from './security';
+
+export class Orchestrator {
+  private nodes: Map<string, MeshNode> = new Map();
+  private taskQueue: AgentTask[] = [];
+
+  constructor(private security: SecurityLayer) {}
+
+  async distributeTask(task: AgentTask) {
+    const targetNode = this.findOptimalNode(task.requirements);
+    if (!targetNode) throw new Error("No suitable node found");
+    
+    await this.security.validateTask(task);
+    return targetNode.execute(task);
+  }
+
+  private findOptimalNode(reqs: any) {
+    // Logic for finding node with lowest latency and highest GPU availability
+    return Array.from(this.nodes.values())
+      .filter(n => n.health > 0.8)
+      .sort((a, b) => a.load - b.load)[0];
+  }
+}` },
+    { name: 'unraid_connector.py', size: '4.8 KB', type: 'python', lastEdit: '5h ago', content: `import os
+import paramiko
+from jarvis_core import Logger
+
+class UnraidMount:
+    def __init__(self, host, user, key_path):
+        self.client = paramiko.SSHClient()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.client.connect(host, username=user, key_filename=key_path)
+
+    def mount_share(self, share_name):
+        stdin, stdout, stderr = self.client.exec_command(f"mount /mnt/user/{share_name}")
+        if stderr.read():
+            Logger.error(f"Failed to mount {share_name}")
+            return False
+        return True` },
+    { name: 'security_rules.json', size: '2.1 KB', type: 'json', lastEdit: '1d ago', content: `{
+  "governance": {
+    "version": "1.4.0",
+    "classification_levels": {
+      "T10": "Public",
+      "T20": "Internal",
+      "T30": "Confidential",
+      "T40": "Restricted"
+    },
+    "default_policy": "deny_all",
+    "mtls_required": true
+  }
+}` }
+  ];
+
+  const currentFile = files.find(f => f.name === selectedFile) || files[0];
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(100vh-160px)]">
+      <div className={`lg:col-span-1 border rounded-2xl overflow-hidden flex flex-col ${
+        theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+      }`}>
+        <div className={`p-4 border-b text-[10px] font-mono uppercase opacity-50 ${
+          theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'
+        }`}>
+          Repository Explorer
+        </div>
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {files.map(file => (
+            <button
+              key={file.name}
+              onClick={() => setSelectedFile(file.name)}
+              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                selectedFile === file.name
+                  ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                  : (theme === 'light' ? 'hover:bg-[#141414]/5' : 'hover:bg-white/5')
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <FileCode className="w-4 h-4 opacity-50" />
+                <div className="text-left">
+                  <p className="text-xs font-bold font-mono">{file.name}</p>
+                  <p className="text-[8px] opacity-50 uppercase">{file.size} • {file.lastEdit}</p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={`lg:col-span-3 border rounded-2xl overflow-hidden flex flex-col ${
+        theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-[#050505] border-white/10'
+      }`}>
+        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
+          <div className="flex items-center gap-3">
+            <Terminal className="w-4 h-4 text-emerald-500" />
+            <span className="text-xs font-mono">{currentFile.name}</span>
+          </div>
+          <div className="flex gap-2">
+            <div className="w-2 h-2 rounded-full bg-rose-500" />
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+          </div>
+        </div>
+        <div className="flex-1 p-6 overflow-auto font-mono text-xs leading-relaxed">
+          <pre className="opacity-80">
+            {currentFile.content}
+          </pre>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ArchitectureView = ({ theme }: { theme: 'light' | 'dark' }) => {
+  const roadmap = [
+    { task: 'Brain Core (Gemini 3 Integration)', status: 'done' },
+    { task: 'Tailscale Mesh Topology', status: 'done' },
+    { task: 'Multi-Agent Orchestrator', status: 'done' },
+    { task: 'Unraid Storage Connector', status: 'done' },
+    { task: 'mTLS Security Layer', status: 'process' },
+    { task: 'Cross-Node GPU Sharing', status: 'process' },
+    { task: 'Autonomous Self-Healing', status: 'left' },
+    { task: 'External API Gateway', status: 'left' },
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div className={`p-8 border rounded-3xl relative overflow-hidden ${
+        theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+      }`}>
+        <h3 className="font-serif italic text-2xl mb-8">System Architecture v3.0</h3>
+        
+        {/* Architecture Diagram (SVG/CSS) */}
+        <div className="relative h-[400px] flex items-center justify-center">
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="w-full h-full border-2 border-dashed border-current rounded-full animate-[spin_60s_linear_infinite]" />
+          </div>
+          
+          <div className="grid grid-cols-3 gap-12 relative z-10">
+            {/* Left Column: Input/Storage */}
+            <div className="space-y-12 flex flex-col justify-center">
+              <div className={`p-4 border rounded-xl text-center space-y-2 ${theme === 'light' ? 'bg-white border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
+                <Database className="w-6 h-6 mx-auto text-emerald-500" />
+                <p className="text-[10px] font-mono uppercase font-bold">Unraid Storage</p>
+                <div className="text-[8px] opacity-50">MOUNTED /mnt/user</div>
+              </div>
+              <div className={`p-4 border rounded-xl text-center space-y-2 ${theme === 'light' ? 'bg-white border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
+                <FileText className="w-6 h-6 mx-auto text-emerald-500" />
+                <p className="text-[10px] font-mono uppercase font-bold">Ingestion Pipeline</p>
+                <div className="text-[8px] opacity-50">T10 - T40 CLASSIFICATION</div>
+              </div>
+            </div>
+
+            {/* Center Column: Core */}
+            <div className="flex flex-col items-center justify-center relative">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-emerald-500/20 rounded-full animate-pulse" />
+              <div className={`w-32 h-32 rounded-full border-4 flex flex-col items-center justify-center space-y-2 relative z-10 ${
+                theme === 'light' ? 'bg-[#141414] text-[#E4E3E0] border-emerald-500' : 'bg-emerald-500 text-[#0A0A0A] border-white'
+              }`}>
+                <Brain className="w-10 h-10" />
+                <p className="text-xs font-bold uppercase tracking-widest">Brain</p>
+                <p className="text-[8px] opacity-70">GEMINI 3.1</p>
+              </div>
+              
+              {/* Connection Lines (Visual) */}
+              <div className="absolute top-1/2 left-0 w-full h-[1px] bg-emerald-500/20 -translate-y-1/2 -z-10" />
+              <div className="absolute top-0 left-1/2 w-[1px] h-full bg-emerald-500/20 -translate-x-1/2 -z-10" />
+            </div>
+
+            {/* Right Column: Nodes/Agents */}
+            <div className="space-y-12 flex flex-col justify-center">
+              <div className={`p-4 border rounded-xl text-center space-y-2 ${theme === 'light' ? 'bg-white border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
+                <Network className="w-6 h-6 mx-auto text-emerald-500" />
+                <p className="text-[10px] font-mono uppercase font-bold">Tailscale Mesh</p>
+                <div className="text-[8px] opacity-50">mTLS ENCRYPTED</div>
+              </div>
+              <div className={`p-4 border rounded-xl text-center space-y-2 ${theme === 'light' ? 'bg-white border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
+                <Users className="w-6 h-6 mx-auto text-emerald-500" />
+                <p className="text-[10px] font-mono uppercase font-bold">Agent Fleet</p>
+                <div className="text-[8px] opacity-50">AUTONOMOUS WORKERS</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className={`p-6 border rounded-2xl ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+          <h4 className="font-bold tracking-tight mb-6 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            Development Roadmap
+          </h4>
+          <div className="space-y-4">
+            {roadmap.map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="flex items-center gap-3">
+                  {item.status === 'done' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  ) : item.status === 'process' ? (
+                    <Activity className="w-4 h-4 text-amber-500 animate-pulse" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-white/20" />
+                  )}
+                  <span className={`text-sm ${item.status === 'done' ? 'opacity-50 line-through' : ''}`}>{item.task}</span>
+                </div>
+                <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                  item.status === 'done' ? 'bg-emerald-500/10 text-emerald-500' :
+                  item.status === 'process' ? 'bg-amber-500/10 text-amber-500' : 'bg-white/10 opacity-30'
+                }`}>
+                  {item.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={`p-6 border rounded-2xl ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+          <h4 className="font-bold tracking-tight mb-6 flex items-center gap-2">
+            <Info className="w-4 h-4 text-blue-500" />
+            System Status Summary
+          </h4>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-mono uppercase opacity-50">
+                <span>Infrastructure Completion</span>
+                <span>72%</span>
+              </div>
+              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 w-[72%]" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
+                <p className="text-2xl font-bold">4/6</p>
+                <p className="text-[10px] font-mono uppercase opacity-50">Core Modules</p>
+              </div>
+              <div className={`p-4 rounded-xl bg-white/5 border border-white/5 text-center`}>
+                <p className="text-2xl font-bold text-emerald-500">Active</p>
+                <p className="text-[10px] font-mono uppercase opacity-50">Mesh Status</p>
+              </div>
+            </div>
+            <p className="text-xs opacity-50 leading-relaxed italic">
+              "System is currently in Phase 6b. Primary focus is hardening the mTLS security layer and implementing cross-node GPU sharing for distributed inference."
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [nodes] = useState<Node[]>(INITIAL_NODES);
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
   const [logs] = useState<AuditLog[]>(INITIAL_LOGS);
-  const [documents] = useState<JarvisDocument[]>(INITIAL_DOCUMENTS);
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>(INITIAL_SCHEDULED_TASKS);
   const [costs] = useState<CostEntry[]>(INITIAL_COSTS);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(INITIAL_SUBSCRIPTIONS);
   const [errorLogs, setErrorLogs] = useState<ErrorLog[]>(INITIAL_ERROR_LOGS);
-  const [users] = useState<User[]>(INITIAL_USERS);
+  const [users] = useState<JarvisUser[]>(INITIAL_USERS);
   const [matrixRoutes] = useState<MatrixRoute[]>(INITIAL_MATRIX_ROUTES);
   const [vulnerabilities] = useState<SecurityVulnerability[]>(INITIAL_SECURITY_VULNERABILITIES);
   const [ports] = useState<PortStatus[]>(INITIAL_PORT_STATUS);
   const [agentProofs] = useState<AgentProof[]>(INITIAL_AGENT_PROOFS);
+  const [toolUsage] = useState<ToolUsage[]>(INITIAL_TOOL_USAGE);
   const [monthlyBudget, setMonthlyBudget] = useState(500);
   
+  // Document Ingestion State
+  const [documents, setDocuments] = useState<JarvisDocument[]>(INITIAL_DOCUMENTS);
+  const [ingestionClass, setIngestionClass] = useState(10);
+  const [isScanning, setIsScanning] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
   // Wizard State
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [selectedAgentForSecurity, setSelectedAgentForSecurity] = useState<Agent | null>(null);
+  const [modalTab, setModalTab] = useState<'security' | 'api'>('security');
+  const [scanningAgentId, setScanningAgentId] = useState<string | null>(null);
+
+  const handleScanNow = (agentId: string) => {
+    setScanningAgentId(agentId);
+    // Simulate scan delay
+    setTimeout(() => {
+      const now = new Date();
+      const timestamp = now.toISOString().replace('T', ' ').split('.')[0];
+      setAgents(prev => prev.map(a => 
+        a.id === agentId ? { ...a, lastSecurityScan: timestamp } : a
+      ));
+      setScanningAgentId(null);
+    }, 2000);
+  };
   const [wizardStep, setWizardStep] = useState(1);
   const [newAgentData, setNewAgentData] = useState<Partial<Agent>>({
     name: '',
@@ -408,6 +1021,51 @@ export default function App() {
     setIsTyping(false);
   };
 
+  const handleInitiatePipeline = () => {
+    setIsUploading(true);
+    setTimeout(() => {
+      const newDoc: JarvisDocument = {
+        id: `d${Date.now()}`,
+        name: `uploaded_doc_${Math.floor(Math.random() * 1000)}.pdf`,
+        classification: ingestionClass,
+        stage: 'ingest',
+        status: 'pending'
+      };
+      setDocuments(prev => [newDoc, ...prev]);
+      setIsUploading(false);
+      
+      // Simulate pipeline progression
+      setTimeout(() => {
+        setDocuments(prev => prev.map(d => d.id === newDoc.id ? { ...d, stage: 'process' } : d));
+        setTimeout(() => {
+          setDocuments(prev => prev.map(d => d.id === newDoc.id ? { ...d, stage: 'publish', status: 'completed' } : d));
+        }, 3000);
+      }, 2000);
+    }, 1500);
+  };
+
+  const handleScanUnraid = () => {
+    setIsScanning(true);
+    setTimeout(() => {
+      setIsScanning(false);
+      const foundDocs = [
+        { id: `u1-${Date.now()}`, name: 'financial_report_2025.pdf', classification: 30, stage: 'ingest', status: 'pending' },
+        { id: `u2-${Date.now()}`, name: 'server_logs_unraid.txt', classification: 10, stage: 'ingest', status: 'pending' }
+      ] as JarvisDocument[];
+      setDocuments(prev => [...foundDocs, ...prev]);
+      
+      // Auto-process scanned docs
+      foundDocs.forEach(doc => {
+        setTimeout(() => {
+          setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, stage: 'process' } : d));
+          setTimeout(() => {
+            setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, stage: 'publish', status: 'completed' } : d));
+          }, 4000);
+        }, 2000);
+      });
+    }, 2000);
+  };
+
   const handleCreateAgent = () => {
     const agent: Agent = {
       ...newAgentData as Agent,
@@ -429,8 +1087,11 @@ export default function App() {
 
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'mesh', label: 'Mesh', icon: Network },
     { id: 'chat', label: 'Brain', icon: MessageSquare },
     { id: 'agents', label: 'Agents', icon: Users },
+    { id: 'code', label: 'Jarvis Code', icon: FileCode },
+    { id: 'architecture', label: 'Architecture', icon: Box },
     { id: 'security', label: 'Security', icon: ShieldAlert },
     { id: 'errors', label: 'Errors', icon: Bug },
     { id: 'governance', label: 'Governance', icon: ShieldCheck },
@@ -586,37 +1247,59 @@ export default function App() {
                     </button>
                   </div>
                   <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {nodes.map((node) => (
-                      <div key={node.id} className={`p-4 border rounded-xl transition-all ${
-                        theme === 'light' ? 'border-[#141414] bg-white/50 shadow-sm' : 'border-white/10 bg-white/5'
-                      }`}>
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${node.status === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`} />
-                              <h4 className="font-bold tracking-tight text-xs truncate">{node.name}</h4>
+                    {nodes.map((node) => {
+                      const NodeIcon = getNodeIcon(node.type);
+                      return (
+                        <div key={node.id} className={`p-4 border rounded-xl transition-all group ${
+                          theme === 'light' ? 'border-[#141414] bg-white/50 shadow-sm' : 'border-white/10 bg-white/5'
+                        }`}>
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="min-w-0 flex items-start gap-2">
+                              <div className={`p-1.5 rounded-lg ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                                <NodeIcon className="w-3.5 h-3.5 opacity-60" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${node.status === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`} />
+                                  <h4 className="font-bold tracking-tight text-xs truncate">{node.name}</h4>
+                                </div>
+                                <p className="text-[8px] font-mono uppercase mt-0.5 opacity-50 truncate">{node.type} • {node.ip}</p>
+                              </div>
                             </div>
-                            <p className="text-[8px] font-mono uppercase mt-0.5 opacity-50 truncate">{node.type} • {node.ip}</p>
+                            <StatusBadge status={node.status} theme={theme} />
                           </div>
-                          <StatusBadge status={node.status} theme={theme} />
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <ResourceGauge label="CPU" value={node.id === 'n1' ? 42 : node.id === 'n4' ? 88 : node.id === 'n2' ? 12 : 8} color="text-blue-500" theme={theme} />
-                          <ResourceGauge label="RAM" value={node.id === 'n1' ? 68 : node.id === 'n4' ? 75 : node.id === 'n2' ? 45 : 30} color="text-emerald-500" theme={theme} />
-                          <ResourceGauge label="DISK" value={node.id === 'n1' ? 85 : node.id === 'n4' ? 40 : node.id === 'n2' ? 20 : 15} color="text-amber-500" theme={theme} />
-                        </div>
-                        <div className={`mt-4 pt-3 border-t ${theme === 'light' ? 'border-[#141414]/5' : 'border-white/5'}`}>
-                          <div className="flex flex-wrap gap-1">
-                            {node.services.slice(0, 3).map(s => (
-                              <span key={s.name} className={`px-1 py-0.5 rounded text-[7px] font-mono ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
-                                {s.name}
-                              </span>
-                            ))}
-                            {node.services.length > 3 && <span className="text-[7px] font-mono opacity-30">+{node.services.length - 3}</span>}
+                          
+                          <div className="grid grid-cols-3 gap-2">
+                            <ResourceGauge label="CPU" value={node.id === 'n1' ? 42 : node.id === 'n4' ? 88 : node.id === 'n2' ? 12 : node.id === 'n7' ? 15 : 8} color="text-blue-500" theme={theme} />
+                            <ResourceGauge label="RAM" value={node.id === 'n1' ? 68 : node.id === 'n4' ? 75 : node.id === 'n2' ? 45 : node.id === 'n7' ? 22 : 30} color="text-emerald-500" theme={theme} />
+                            <ResourceGauge label="DISK" value={node.id === 'n1' ? 85 : node.id === 'n4' ? 40 : node.id === 'n2' ? 20 : node.id === 'n7' ? 92 : 15} color="text-amber-500" theme={theme} />
+                          </div>
+
+                          <div className={`mt-4 pt-3 border-t ${theme === 'light' ? 'border-[#141414]/5' : 'border-white/5'}`}>
+                            <div className="flex flex-wrap gap-1">
+                              {node.services.slice(0, 4).map(s => (
+                                <div key={s.name} className={`flex items-center gap-1 px-1 py-0.5 rounded ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                                  <div className={`w-1 h-1 rounded-full ${
+                                    s.status === 'online' ? 'bg-emerald-500' : 
+                                    s.status === 'degraded' ? 'bg-amber-500' : 'bg-rose-500'
+                                  }`} />
+                                  <span className="text-[7px] font-mono">{s.name}</span>
+                                </div>
+                              ))}
+                              {node.services.length > 4 && <span className="text-[7px] font-mono opacity-30 ml-1">+{node.services.length - 4}</span>}
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between opacity-30 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" />
+                              <span className="text-[7px] font-mono uppercase">Seen {new Date(node.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            <span className="text-[7px] font-mono truncate max-w-[80px]">{node.hardware}</span>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {/* Future Expansion Card */}
                     <div className={`p-4 border border-dashed rounded-xl flex flex-col items-center justify-center gap-2 opacity-30 hover:opacity-100 transition-all cursor-pointer ${
                       theme === 'light' ? 'border-[#141414]/20' : 'border-white/20'
@@ -723,9 +1406,17 @@ export default function App() {
                 {/* Main Chat Area */}
                 <div className="flex-1 border border-[#141414] rounded-2xl bg-white/50 flex flex-col overflow-hidden shadow-2xl">
                   <div className="p-4 border-b border-[#141414] bg-[#141414]/5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${isTyping ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                      <p className="text-xs font-bold uppercase tracking-widest">Brain Session: {isTyping ? 'Thinking...' : 'Active'}</p>
+                    <div className="flex items-center gap-3 relative">
+                      {isTyping && (
+                        <motion.div 
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.5, 0.2] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="absolute -inset-2 bg-amber-500/20 rounded-full blur-xl"
+                        />
+                      )}
+                      <div className={`w-3 h-3 rounded-full relative z-10 ${isTyping ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                      <p className="text-xs font-bold uppercase tracking-widest relative z-10">Brain Session: {isTyping ? 'Thinking...' : 'Active'}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex bg-[#141414]/5 p-1 rounded-lg border border-[#141414]/10">
@@ -746,7 +1437,26 @@ export default function App() {
                     </div>
                   </div>
                   
-                  <div className="flex-1 p-8 space-y-6 overflow-y-auto font-mono text-sm">
+                  <div className="flex-1 p-8 space-y-6 overflow-y-auto font-mono text-sm relative">
+                    {/* Data Stream Animation Background */}
+                    {isTyping && (
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03]">
+                        {[...Array(10)].map((_, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ y: -100, x: Math.random() * 100 + '%' }}
+                            animate={{ y: 1000 }}
+                            transition={{ 
+                              duration: Math.random() * 5 + 5, 
+                              repeat: Infinity, 
+                              ease: "linear",
+                              delay: Math.random() * 5
+                            }}
+                            className="absolute w-[1px] h-20 bg-[#141414]"
+                          />
+                        ))}
+                      </div>
+                    )}
                     {messages.map((msg, idx) => (
                       <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                         <div className={`w-8 h-8 rounded border border-[#141414] flex items-center justify-center ${
@@ -948,12 +1658,30 @@ export default function App() {
                     <h3 className="font-serif italic text-2xl">Agent Registry</h3>
                     <p className="text-xs opacity-50 font-mono uppercase mt-1">Governed by Central Policy Gateway</p>
                   </div>
-                  <button 
-                    onClick={() => setIsWizardOpen(true)}
-                    className="bg-[#141414] text-[#E4E3E0] px-6 py-2 rounded-lg text-sm font-bold hover:bg-[#141414]/90 transition-all flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" /> Deploy New Agent
-                  </button>
+                  <div className="flex gap-4">
+                    <div className={`px-4 py-2 border rounded-xl ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414]/10 bg-white'} flex items-center gap-6`}>
+                      <div className="text-center">
+                        <p className="text-[8px] font-mono uppercase opacity-50">Avg CPU</p>
+                        <p className="text-sm font-bold">35.6%</p>
+                      </div>
+                      <div className="w-[1px] h-6 bg-current opacity-10" />
+                      <div className="text-center">
+                        <p className="text-[8px] font-mono uppercase opacity-50">Avg RAM</p>
+                        <p className="text-sm font-bold">39.8%</p>
+                      </div>
+                      <div className="w-[1px] h-6 bg-current opacity-10" />
+                      <div className="text-center">
+                        <p className="text-[8px] font-mono uppercase opacity-50">Avg Security</p>
+                        <p className="text-sm font-bold text-emerald-500">77.0</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setIsWizardOpen(true)}
+                      className="bg-[#141414] text-[#E4E3E0] px-6 py-2 rounded-lg text-sm font-bold hover:bg-[#141414]/90 transition-all flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" /> Deploy New Agent
+                    </button>
+                  </div>
                 </div>
 
                 {/* Agent Lifecycle Pipeline */}
@@ -1043,39 +1771,265 @@ export default function App() {
                 <section className="space-y-6">
                   <div className="flex items-center gap-2">
                     <Users className="w-5 h-5 opacity-30" />
-                    <h4 className="font-serif italic text-xl">Active Agent Registry</h4>
+                    <h4 className="font-serif italic text-xl">Active Agent Registry & Health Monitoring</h4>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {agents.map((agent) => (
-                      <div key={agent.id} className={`border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white/50'} rounded-2xl p-6 space-y-4 hover:shadow-xl transition-all group`}>
-                        <div className="flex items-center justify-between">
+                      <div key={agent.id} className={`border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white/50'} rounded-2xl p-6 space-y-6 hover:shadow-xl transition-all group relative overflow-hidden`}>
+                        {/* Health Background Glow */}
+                        <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-10 pointer-events-none ${
+                          agent.health > 90 ? 'bg-emerald-500' : agent.health > 70 ? 'bg-amber-500' : 'bg-rose-500'
+                        }`} />
+
+                        <div className="flex items-center justify-between relative z-10">
                           <div className={`w-12 h-12 rounded-xl border ${theme === 'dark' ? 'border-white/20 bg-white/10' : 'border-[#141414] bg-[#141414]/5'} flex items-center justify-center group-hover:bg-[#141414] group-hover:text-[#E4E3E0] transition-colors`}>
                             <Users className="w-6 h-6" />
                           </div>
-                          <StatusBadge status={agent.status === 'active' ? 'online' : 'offline'} theme={theme} />
+                          <div className="flex flex-col items-end gap-1">
+                            <StatusBadge status={agent.status === 'active' ? 'online' : 'offline'} theme={theme} />
+                            <span className={`text-[10px] font-mono font-bold ${
+                              agent.health > 90 ? 'text-emerald-500' : agent.health > 70 ? 'text-amber-500' : 'text-rose-500'
+                            }`}>
+                              HEALTH: {agent.health}%
+                            </span>
+                          </div>
                         </div>
-                        <div>
+
+                        <div className="relative z-10">
                           <h4 className="font-bold text-lg">{agent.name}</h4>
                           <p className="text-xs opacity-50 font-mono uppercase">{agent.role}</p>
                         </div>
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-mono uppercase opacity-50">Capabilities</p>
-                          <div className="flex flex-wrap gap-1">
-                            {agent.allowedTools.map(tool => (
-                              <span key={tool} className={`px-2 py-0.5 ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#141414]/5 border-[#141414]/10'} border rounded text-[10px] font-mono`}>
-                                {tool}
-                              </span>
-                            ))}
+
+                        {/* Health Dashboard */}
+                        <div className={`p-4 rounded-2xl border ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#141414]/5 border-[#141414]/10'} space-y-4 relative z-10`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-[10px] font-bold font-mono uppercase opacity-50">
+                              <Activity className="w-3 h-3" />
+                              Health Dashboard
+                            </div>
+                            <div className="flex gap-3 text-[8px] font-mono uppercase">
+                              <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> CPU
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> RAM
+                              </div>
+                            </div>
+                          </div>
+
+                          <AgentPerformanceChart cpu={agent.cpuUsage || 0} memory={agent.memoryUsage || 0} theme={theme} />
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[8px] font-mono uppercase opacity-50">
+                                <span>CPU Usage</span>
+                                <span>{agent.cpuUsage}%</span>
+                              </div>
+                              <div className={`h-1 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                                <div 
+                                  className={`h-full transition-all duration-500 ${
+                                    (agent.cpuUsage || 0) > 80 ? 'bg-rose-500' : (agent.cpuUsage || 0) > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                                  }`}
+                                  style={{ width: `${agent.cpuUsage}%` }}
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[8px] font-mono uppercase opacity-50">
+                                <span>Memory</span>
+                                <span>{agent.memoryUsage}%</span>
+                              </div>
+                              <div className={`h-1 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                                <div 
+                                  className={`h-full transition-all duration-500 ${
+                                    (agent.memoryUsage || 0) > 80 ? 'bg-rose-500' : (agent.memoryUsage || 0) > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                                  }`}
+                                  style={{ width: `${agent.memoryUsage}%` }}
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className={`pt-4 border-t ${theme === 'dark' ? 'border-white/10' : 'border-[#141414]/10'} flex items-center justify-between`}>
-                          <div className="flex items-center gap-2">
-                            <ClassificationBadge level={agent.classification} theme={theme} />
-                            <span className="text-[10px] font-mono opacity-50">{agent.model}</span>
+
+                        {/* Progress Visualization */}
+                        {agent.progress !== undefined && (
+                          <div className="space-y-3 relative z-10">
+                            <div className="flex justify-between items-end">
+                              <div className="space-y-1">
+                                <p className="text-[8px] font-mono uppercase opacity-50">Current Operation</p>
+                                <p className="text-xs font-bold tracking-tight">{agent.activeTask}</p>
+                              </div>
+                              <div className="text-right">
+                                <span className={`text-lg font-mono font-black ${theme === 'light' ? 'text-[#141414]' : 'text-emerald-500'}`}>
+                                  {agent.progress}%
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className={`h-2.5 rounded-full overflow-hidden relative ${theme === 'light' ? 'bg-[#141414]/10' : 'bg-white/10'}`}>
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${agent.progress}%` }}
+                                className={`h-full relative ${theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'}`}
+                              >
+                                {/* Animated Shine Effect */}
+                                <motion.div 
+                                  animate={{ x: ['-100%', '200%'] }}
+                                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-1/2 skew-x-12"
+                                />
+                              </motion.div>
+                            </div>
+
+                            {agent.estimatedCompletion && (
+                              <div className="flex justify-between items-center text-[9px] font-mono uppercase opacity-50">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>ETA: {agent.estimatedCompletion}</span>
+                                </div>
+                                <span>{agent.progress < 100 ? 'In Progress' : 'Completed'}</span>
+                              </div>
+                            )}
                           </div>
-                          <button className={`p-2 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-[#141414]/5'} rounded-lg transition-colors`}>
-                            <Settings className="w-4 h-4" />
-                          </button>
+                        )}
+
+                        {/* Tool Usage Monitoring */}
+                        <div className="space-y-3 relative z-10">
+                          <p className="text-[10px] font-mono uppercase opacity-50 border-b pb-1 border-current/10">Tool Usage Monitor</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                            {toolUsage.filter(u => u.agentId === agent.id).map(usage => (
+                              <div key={usage.id} className={`p-2 rounded-lg border ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#141414]/5 border-[#141414]/10'} space-y-1`}>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] font-bold font-mono">{usage.toolName}</span>
+                                  <span className="text-[9px] opacity-50 font-mono">{usage.count} calls</span>
+                                </div>
+                                <div className="text-[8px] opacity-40 font-mono truncate" title={usage.parameters}>
+                                  Params: {usage.parameters}
+                                </div>
+                                <div className="text-[7px] opacity-30 font-mono text-right">
+                                  Last: {usage.lastUsed}
+                                </div>
+                              </div>
+                            ))}
+                            {toolUsage.filter(u => u.agentId === agent.id).length === 0 && (
+                              <p className="text-[10px] opacity-30 italic text-center py-2">No tool telemetry recorded</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={`pt-4 border-t ${theme === 'dark' ? 'border-white/10' : 'border-[#141414]/10'} space-y-4 relative z-10`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <ClassificationBadge level={agent.classification} theme={theme} />
+                              <span className="text-[10px] font-mono opacity-50">{agent.model}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <button className={`p-2 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-[#141414]/5'} rounded-lg transition-colors`}>
+                                <Activity className="w-4 h-4" />
+                              </button>
+                              <button className={`p-2 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-[#141414]/5'} rounded-lg transition-colors`}>
+                                <Settings className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Security Overview */}
+                          <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-rose-500/5 border-rose-500/20' : 'bg-rose-500/5 border-rose-500/20'} space-y-3`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-[10px] font-bold font-mono text-rose-500 uppercase">
+                                <ShieldAlert className="w-3 h-3" />
+                                Security Overview
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] font-mono opacity-50 uppercase">Score</span>
+                                <div className="relative w-8 h-8">
+                                  <svg className="w-full h-full" viewBox="0 0 36 36">
+                                    <path
+                                      className="stroke-current opacity-10"
+                                      strokeWidth="3"
+                                      fill="none"
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    />
+                                    <path
+                                      className={`${(agent.securityScore || 0) > 80 ? 'text-emerald-500' : (agent.securityScore || 0) > 50 ? 'text-amber-500' : 'text-rose-500'} stroke-current`}
+                                      strokeWidth="3"
+                                      strokeDasharray={`${agent.securityScore}, 100`}
+                                      strokeLinecap="round"
+                                      fill="none"
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    />
+                                    <text x="18" y="21" className="text-[10px] font-mono font-bold fill-current text-center" textAnchor="middle">{agent.securityScore}</text>
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[9px] font-mono opacity-70">
+                                <span>Allowed Tools</span>
+                                <span className="text-emerald-500">{agent.allowedTools.length} Active</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {agent.allowedTools.map(tool => (
+                                  <span key={tool} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${theme === 'dark' ? 'bg-white/5' : 'bg-[#141414]/5'}`}>
+                                    {tool}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            {(agent.vulnerabilities?.length || 0) > 0 && (
+                              <div className="flex items-start gap-2 text-[9px] font-mono text-rose-500/80">
+                                <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                <span>{agent.vulnerabilities?.length} Vulnerabilities Detected</span>
+                              </div>
+                            )}
+                            {(agent.policyViolations?.length || 0) > 0 && (
+                              <div className="flex items-start gap-2 text-[9px] font-mono text-amber-500/80">
+                                <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                <span>{agent.policyViolations?.length} Policy Violations</span>
+                              </div>
+                            )}
+
+                            <div className="pt-2 border-t border-rose-500/10 space-y-2">
+                              <div className="flex justify-between items-center text-[9px] font-mono opacity-50 uppercase">
+                                <span>Last Security Scan</span>
+                                <span>{agent.lastSecurityScan || 'Never'}</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => handleScanNow(agent.id)}
+                                  disabled={scanningAgentId === agent.id}
+                                  className={`flex-1 py-2 rounded-lg text-[10px] font-bold font-mono uppercase transition-all flex items-center justify-center gap-2 ${
+                                    theme === 'dark' 
+                                      ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' 
+                                      : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
+                                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                  {scanningAgentId === agent.id ? (
+                                    <>
+                                      <RefreshCw className="w-3 h-3 animate-spin" />
+                                      Scanning...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Scan className="w-3 h-3" />
+                                      Scan Now
+                                    </>
+                                  )}
+                                </button>
+                                <button 
+                                  onClick={() => setSelectedAgentForSecurity(agent)}
+                                  className={`flex-1 py-2 rounded-lg text-[10px] font-bold font-mono uppercase transition-all flex items-center justify-center gap-2 ${
+                                    theme === 'dark' 
+                                      ? 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20' 
+                                      : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
+                                  }`}
+                                >
+                                  <ShieldAlert className="w-3 h-3" />
+                                  Report
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1227,75 +2181,184 @@ export default function App() {
               </motion.div>
             )}
 
+            {activeTab === 'mesh' && (
+              <motion.div
+                key="mesh"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <MeshView nodes={nodes} theme={theme} />
+              </motion.div>
+            )}
+
             {activeTab === 'documents' && (
               <motion.div
                 key="documents"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6"
+                className="space-y-8"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-serif italic text-2xl">Ingestion Pipeline</h3>
+                  <h3 className="font-serif italic text-3xl">Document Ingestion</h3>
                   <div className="flex gap-2">
-                    <button className={`border px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                      theme === 'light' ? 'border-[#141414] hover:bg-[#141414] hover:text-[#E4E3E0]' : 'border-white/10 hover:bg-white/10'
-                    }`}>
-                      <Database className="w-4 h-4" /> Scan Unraid
+                    <button 
+                      onClick={handleScanUnraid}
+                      disabled={isScanning}
+                      className={`border px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
+                        isScanning ? 'opacity-50 cursor-not-allowed' : ''
+                      } ${
+                        theme === 'light' ? 'border-[#141414] hover:bg-[#141414] hover:text-[#E4E3E0]' : 'border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      <Database className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} /> 
+                      {isScanning ? 'Scanning Storage...' : 'Scan Unraid Storage'}
                     </button>
                   </div>
                 </div>
 
-                <div className={`border rounded-xl overflow-hidden transition-colors ${
-                  theme === 'light' ? 'bg-white/30 border-[#141414]' : 'bg-white/5 border-white/10'
-                }`}>
-                  <div className={`grid grid-cols-5 p-4 border-b text-[10px] font-mono uppercase opacity-50 ${
-                    theme === 'light' ? 'bg-[#141414]/5 border-[#141414]' : 'bg-white/5 border-white/10'
+                {/* Upload Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className={`lg:col-span-1 p-6 border rounded-2xl space-y-6 ${
+                    theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
                   }`}>
-                    <div>Document Name</div>
-                    <div>Classification</div>
-                    <div>Pipeline Stage</div>
-                    <div>Status</div>
-                    <div>Actions</div>
-                  </div>
-                  {documents.map(doc => (
-                    <div key={doc.id} className={`grid grid-cols-5 p-4 border-b last:border-0 transition-colors items-center ${
-                      theme === 'light' ? 'border-[#141414] hover:bg-[#141414]/5' : 'border-white/10 hover:bg-white/5'
+                    <div className="space-y-2">
+                      <h4 className="font-bold tracking-tight">Ingest New Document</h4>
+                      <p className="text-xs opacity-50">Upload files to the JARVIS processing pipeline.</p>
+                    </div>
+
+                    <div className={`border-2 border-dashed rounded-xl p-8 text-center space-y-4 transition-colors cursor-pointer ${
+                      theme === 'light' ? 'border-[#141414]/20 hover:border-[#141414]' : 'border-white/10 hover:border-white/30'
                     }`}>
-                      <div className="font-medium flex items-center gap-2">
-                        <FileText className="w-4 h-4 opacity-30" />
-                        {doc.name}
+                      <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto">
+                        <Plus className="w-6 h-6 text-emerald-500" />
                       </div>
-                      <div><ClassificationBadge level={doc.classification} theme={theme} /></div>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-24 h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/10' : 'bg-white/10'}`}>
-                          <div className={`h-full ${theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500'} ${
-                            doc.stage === 'ingest' ? 'w-1/3' : doc.stage === 'process' ? 'w-2/3' : 'w-full'
-                          }`} />
-                        </div>
-                        <span className="text-[10px] font-mono uppercase opacity-50">{doc.stage}</span>
-                      </div>
-                      <div>
-                        {doc.status === 'completed' ? (
-                          <span className={`${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'} flex items-center gap-1 text-[10px] font-bold uppercase`}>
-                            <CheckCircle2 className="w-3 h-3" /> Ready
-                          </span>
-                        ) : doc.status === 'pending' ? (
-                          <span className={`${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'} flex items-center gap-1 text-[10px] font-bold uppercase`}>
-                            <Clock className="w-3 h-3" /> Processing
-                          </span>
-                        ) : (
-                          <span className={`${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'} flex items-center gap-1 text-[10px] font-bold uppercase`}>
-                            <AlertTriangle className="w-3 h-3" /> Failed
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button className={`p-1.5 rounded transition-colors ${theme === 'light' ? 'hover:bg-[#141414]/10' : 'hover:bg-white/10'}`}><Eye className="w-4 h-4" /></button>
-                        <button className={`p-1.5 rounded transition-colors ${theme === 'light' ? 'hover:bg-[#141414]/10' : 'hover:bg-white/10'}`}><Settings className="w-4 h-4" /></button>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold">Click or drag to upload</p>
+                        <p className="text-[10px] opacity-50 font-mono uppercase">PDF, DOCX, TXT, MD (MAX 50MB)</p>
                       </div>
                     </div>
-                  ))}
+
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-mono uppercase opacity-50">Classification Level</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[10, 20, 30, 40].map(level => (
+                            <button 
+                              key={level}
+                              onClick={() => setIngestionClass(level)}
+                              className={`py-2 rounded border text-xs font-bold transition-all ${
+                                ingestionClass === level
+                                  ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' : 'bg-emerald-500 text-[#0A0A0A] border-emerald-500')
+                                  : (theme === 'light' ? 'border-[#141414]/10 hover:bg-[#141414]/5' : 'border-white/10 hover:bg-white/10')
+                              }`}
+                            >
+                              T{level}
+                            </button>
+                          ))}
+                        </div>
+                        <div className={`p-3 rounded-lg border text-[9px] font-mono space-y-1.5 ${
+                          theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10 opacity-70'
+                        }`}>
+                          <p className="font-bold uppercase opacity-50 mb-1">Level Key</p>
+                          <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500" /> <span>T10: Public / General</span></div>
+                          <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-500" /> <span>T20: Internal / Private</span></div>
+                          <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500" /> <span>T30: Confidential / PII</span></div>
+                          <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-rose-500" /> <span>T40: Restricted / Secret</span></div>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={handleInitiatePipeline}
+                        disabled={isUploading}
+                        className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                          isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                        } ${
+                          theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]'
+                        }`}
+                      >
+                        {isUploading ? <Activity className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                        {isUploading ? 'Uploading...' : 'Initiate Pipeline'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold tracking-tight">Active Pipeline</h4>
+                      <span className="text-[10px] font-mono opacity-50 uppercase">{documents.length} Documents</span>
+                    </div>
+                    <div className={`border rounded-xl overflow-hidden transition-colors ${
+                      theme === 'light' ? 'bg-white/30 border-[#141414]/10' : 'bg-white/5 border-white/10'
+                    }`}>
+                      <div className={`grid grid-cols-5 p-4 border-b text-[10px] font-mono uppercase opacity-50 ${
+                        theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
+                      }`}>
+                        <div>Document</div>
+                        <div>Class</div>
+                        <div>Stage</div>
+                        <div>Status</div>
+                        <div className="text-right">Actions</div>
+                      </div>
+                      {documents.map(doc => (
+                        <div key={doc.id} className={`grid grid-cols-5 p-4 border-b last:border-0 transition-colors items-center ${
+                          theme === 'light' ? 'border-[#141414]/5 hover:bg-[#141414]/5' : 'border-white/10 hover:bg-white/5'
+                        }`}>
+                          <div className="font-medium flex items-center gap-2 truncate">
+                            <FileText className="w-4 h-4 opacity-30" />
+                            {doc.name}
+                          </div>
+                          <div><ClassificationBadge level={doc.classification} theme={theme} /></div>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-16 h-1 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/10' : 'bg-white/10'}`}>
+                              <div className={`h-full ${theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500'} ${
+                                doc.stage === 'ingest' ? 'w-1/3' : doc.stage === 'process' ? 'w-2/3' : 'w-full'
+                              }`} />
+                            </div>
+                            <span className="text-[8px] font-mono uppercase opacity-50">{doc.stage}</span>
+                          </div>
+                          <div>
+                            {doc.status === 'completed' ? (
+                              <span className={`${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
+                                <CheckCircle2 className="w-2.5 h-2.5" /> Ready
+                              </span>
+                            ) : doc.status === 'pending' ? (
+                              <span className={`${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
+                                <Clock className="w-2.5 h-2.5 animate-pulse" /> Processing
+                              </span>
+                            ) : (
+                              <span className={`${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
+                                <AlertTriangle className="w-2.5 h-2.5" /> Failed
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1 justify-end">
+                            <button className={`p-1 rounded transition-colors ${theme === 'light' ? 'hover:bg-[#141414]/10' : 'hover:bg-white/10'}`}><Eye className="w-3.5 h-3.5" /></button>
+                            <button className={`p-1 rounded transition-colors ${theme === 'light' ? 'hover:bg-[#141414]/10' : 'hover:bg-white/10'}`}><Settings className="w-3.5 h-3.5" /></button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'code' && (
+              <motion.div
+                key="code"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <CodeView theme={theme} />
+              </motion.div>
+            )}
+
+            {activeTab === 'architecture' && (
+              <motion.div
+                key="architecture"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <ArchitectureView theme={theme} />
               </motion.div>
             )}
 
@@ -1879,6 +2942,256 @@ export default function App() {
       </main>
 
       {/* Agent Wizard Modal */}
+      {/* Security Report Modal */}
+      <AnimatePresence>
+        {selectedAgentForSecurity && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedAgentForSecurity(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-8 border shadow-2xl ${
+                theme === 'light' ? 'bg-white border-[#141414]' : 'bg-[#0a0a0a] border-white/10'
+              }`}
+            >
+              <div className="flex justify-between items-start mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-rose-500/10 rounded-2xl">
+                    <ShieldAlert className="w-8 h-8 text-rose-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-serif italic">Agent Intelligence & Security</h2>
+                    <p className="text-xs font-mono uppercase opacity-50">Agent: {selectedAgentForSecurity.name}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setSelectedAgentForSecurity(null);
+                    setModalTab('security');
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <Plus className="w-6 h-6 rotate-45" />
+                </button>
+              </div>
+
+              {/* Tab Switcher */}
+              <div className="flex gap-4 mb-8 border-b border-white/10">
+                <button 
+                  onClick={() => setModalTab('security')}
+                  className={`pb-4 text-xs font-mono uppercase font-bold transition-all relative ${
+                    modalTab === 'security' ? 'text-rose-500' : 'opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  Security Report
+                  {modalTab === 'security' && (
+                    <motion.div layoutId="modalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-500" />
+                  )}
+                </button>
+                <button 
+                  onClick={() => setModalTab('api')}
+                  className={`pb-4 text-xs font-mono uppercase font-bold transition-all relative ${
+                    modalTab === 'api' ? 'text-emerald-500' : 'opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  API Call Log
+                  {modalTab === 'api' && (
+                    <motion.div layoutId="modalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />
+                  )}
+                </button>
+              </div>
+
+              {modalTab === 'security' ? (
+                <>
+                  <div className="grid grid-cols-2 gap-6 mb-8">
+                <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                  <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Classification Level</p>
+                  <div className="flex items-center gap-2">
+                    <ClassificationBadge level={selectedAgentForSecurity.classification} theme={theme} />
+                    <span className="text-sm font-bold">Level {selectedAgentForSecurity.classification}</span>
+                  </div>
+                </div>
+                <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                  <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Model Integrity</p>
+                  <div className="flex items-center gap-2">
+                    <Fingerprint className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm font-bold">{selectedAgentForSecurity.model}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <section>
+                  <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2">
+                    <Key className="w-3 h-3" />
+                    Allowed Toolset
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedAgentForSecurity.allowedTools.map(tool => (
+                      <div key={tool} className={`p-3 rounded-xl border flex items-center justify-between ${
+                        theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                      }`}>
+                        <span className="text-xs font-mono">{tool}</span>
+                        <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2 text-rose-500">
+                    <AlertOctagon className="w-3 h-3" />
+                    Detected Vulnerabilities
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedAgentForSecurity.vulnerabilities?.map((vuln) => (
+                      <div key={vuln.id} className={`p-4 rounded-xl border flex items-start gap-3 ${
+                        vuln.severity === 'critical' ? 'bg-rose-500/10 border-rose-500/30' :
+                        vuln.severity === 'high' ? 'bg-rose-500/5 border-rose-500/20' :
+                        'bg-amber-500/5 border-amber-500/20'
+                      }`}>
+                        <AlertTriangle className={`w-4 h-4 mt-0.5 ${
+                          vuln.severity === 'critical' || vuln.severity === 'high' ? 'text-rose-500' : 'text-amber-500'
+                        }`} />
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <p className={`text-sm font-bold ${
+                              vuln.severity === 'critical' || vuln.severity === 'high' ? 'text-rose-500' : 'text-amber-500'
+                            }`}>{vuln.title}</p>
+                            <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded uppercase ${
+                              vuln.severity === 'critical' ? 'bg-rose-500 text-white' :
+                              vuln.severity === 'high' ? 'bg-rose-500/20 text-rose-500' :
+                              'bg-amber-500/20 text-amber-500'
+                            }`}>
+                              {vuln.severity}
+                            </span>
+                          </div>
+                          <p className="text-[11px] opacity-70 mt-1">{vuln.description}</p>
+                          <div className="flex justify-between items-center mt-2 text-[9px] font-mono opacity-50">
+                            <span>Target: {vuln.target}</span>
+                            <span>Detected: {vuln.detectedAt}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {(!selectedAgentForSecurity.vulnerabilities || selectedAgentForSecurity.vulnerabilities.length === 0) && (
+                      <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-3">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        <p className="text-sm font-bold text-emerald-500">No vulnerabilities detected</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2 text-amber-500">
+                    <History className="w-3 h-3" />
+                    Policy Violations & Anomalies
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedAgentForSecurity.policyViolations?.map((violation) => (
+                      <div key={violation.id} className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-3">
+                        <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <p className="text-sm font-bold text-amber-500">{violation.type}</p>
+                            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 uppercase">
+                              {violation.severity}
+                            </span>
+                          </div>
+                          <p className="text-[11px] opacity-70 mt-1">{violation.description}</p>
+                          <div className="flex justify-between items-center mt-2 text-[9px] font-mono opacity-50">
+                            <span>Status: {violation.status}</span>
+                            <span>{violation.timestamp}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {(!selectedAgentForSecurity.policyViolations || selectedAgentForSecurity.policyViolations.length === 0) && (
+                      <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-3">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        <p className="text-sm font-bold text-emerald-500">No policy violations recorded</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+              </>
+              ) : (
+                <div className="space-y-6">
+                  <section>
+                    <h3 className="text-xs font-mono uppercase font-bold mb-3 flex items-center gap-2 text-emerald-500">
+                      <TerminalSquare className="w-3 h-3" />
+                      Live Tool Invocation Log
+                    </h3>
+                    <div className="space-y-3">
+                      {toolUsage.filter(u => u.agentId === selectedAgentForSecurity.id).map((usage) => (
+                        <div key={usage.id} className={`p-4 rounded-xl border ${
+                          theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                        } space-y-3`}>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-emerald-500/10 rounded-lg">
+                                <Wrench className="w-3 h-3 text-emerald-500" />
+                              </div>
+                              <span className="text-sm font-bold font-mono">{usage.toolName}</span>
+                            </div>
+                            <span className="text-[10px] font-mono opacity-50">{usage.lastUsed}</span>
+                          </div>
+                          
+                          <div className={`p-3 rounded-lg font-mono text-[10px] ${
+                            theme === 'light' ? 'bg-[#141414]/5' : 'bg-black/40'
+                          }`}>
+                            <p className="opacity-40 mb-1 uppercase text-[8px]">Parameters</p>
+                            <pre className="whitespace-pre-wrap break-all opacity-80">
+                              {JSON.stringify(JSON.parse(usage.parameters), null, 2)}
+                            </pre>
+                          </div>
+
+                          <div className="flex justify-between items-center text-[9px] font-mono">
+                            <div className="flex items-center gap-4">
+                              <span className="opacity-50 uppercase">Total Calls: <span className="opacity-100 font-bold">{usage.count}</span></span>
+                              <span className="opacity-50 uppercase">Avg Latency: <span className="opacity-100 font-bold">142ms</span></span>
+                            </div>
+                            <span className="text-emerald-500 font-bold uppercase">Success</span>
+                          </div>
+                        </div>
+                      ))}
+                      {toolUsage.filter(u => u.agentId === selectedAgentForSecurity.id).length === 0 && (
+                        <div className="p-8 text-center opacity-30 italic font-mono text-sm">
+                          No tool telemetry recorded for this agent.
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              <div className="mt-8 pt-8 border-t border-white/10 flex gap-4">
+                <button className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold hover:bg-rose-600 transition-all">
+                  Quarantine Agent
+                </button>
+                <button 
+                  onClick={() => setSelectedAgentForSecurity(null)}
+                  className={`flex-1 py-3 rounded-xl font-bold border transition-all ${
+                    theme === 'light' ? 'border-[#141414] hover:bg-[#141414]/5' : 'border-white/20 hover:bg-white/10'
+                  }`}
+                >
+                  Dismiss Report
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isWizardOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
