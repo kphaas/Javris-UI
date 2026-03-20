@@ -53,6 +53,7 @@ export interface Agent {
   securityScore?: number; // 0-100
   lastSecurityScan?: string;
   networkActivity?: NetworkActivity;
+  defaultTaskPriority: 'low' | 'medium' | 'high';
 }
 
 export interface ToolUsage {
@@ -78,8 +79,9 @@ export interface Document {
   id: string;
   name: string;
   classification: number;
-  stage: 'ingest' | 'process' | 'publish';
+  stage: 'ingest' | 'process' | 'sort' | 'publish';
   status: 'pending' | 'completed' | 'failed';
+  progress?: number; // 0-100
 }
 
 export interface ScheduledTask {
@@ -90,6 +92,7 @@ export interface ScheduledTask {
   status: 'queued' | 'running' | 'completed' | 'failed';
   priority: 'low' | 'medium' | 'high';
   model: string;
+  agentId?: string;
   retryStrategy: 'none' | 'exponential' | 'aggressive';
 }
 
@@ -166,4 +169,51 @@ export interface AgentProof {
   hash: string;
   timestamp: string;
   changes?: string;
+  verificationStatus?: 'verified' | 'invalid' | 'verifying';
+}
+
+export interface RecommendedAction {
+  id: string;
+  title: string;
+  description: string;
+  type: 'patch' | 'config' | 'policy';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+}
+
+export interface FinancialGoal {
+  id: string;
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+  type: 'short' | 'long';
+}
+
+export interface BudgetItem {
+  id: string;
+  category: string;
+  allocated: number;
+  spent: number;
+  icon: string;
+}
+
+export interface RetirementData {
+  currentSavings: number;
+  monthlyContribution: number;
+  expectedReturn: number;
+  retirementAge: number;
+  currentAge: number;
+  targetAmount: number;
+}
+
+export interface GithubFile {
+  name: string;
+  content: string;
+}
+
+export interface GithubRepo {
+  name: string;
+  stars: number;
+  language: string;
+  files: GithubFile[];
 }

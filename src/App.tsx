@@ -94,10 +94,17 @@ import {
   Box,
   Github,
   GitBranch,
-  Star
+  Star,
+  Cloud,
+  Image as ImageIcon,
+  Wallet,
+  PiggyBank,
+  Landmark,
+  PieChart,
+  Coins
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Node, Agent, AuditLog, Document as JarvisDocument, ScheduledTask, CostEntry, Subscription, ErrorLog, User as JarvisUser, MatrixRoute, SecurityVulnerability, PortStatus, AgentProof, ToolUsage, PolicyViolation } from './types';
+import { Node, Agent, AuditLog, Document as JarvisDocument, ScheduledTask, CostEntry, Subscription, ErrorLog, User as JarvisUser, MatrixRoute, SecurityVulnerability, PortStatus, AgentProof, ToolUsage, PolicyViolation, RecommendedAction, FinancialGoal, BudgetItem, RetirementData, GithubRepo } from './types';
 import { chatWithJarvis } from './services/gemini';
 
 // --- Mock Data ---
@@ -275,7 +282,8 @@ const INITIAL_AGENTS: Agent[] = [
       dataTransferredIn: '1.2 GB',
       dataTransferredOut: '450 MB',
       blockedAttempts: 3
-    }
+    },
+    defaultTaskPriority: 'high'
   },
   { 
     id: 'a2', 
@@ -300,7 +308,8 @@ const INITIAL_AGENTS: Agent[] = [
       dataTransferredIn: '120 MB',
       dataTransferredOut: '45 MB',
       blockedAttempts: 0
-    }
+    },
+    defaultTaskPriority: 'low'
   },
   { 
     id: 'a3', 
@@ -328,7 +337,8 @@ const INITIAL_AGENTS: Agent[] = [
       dataTransferredIn: '4.5 GB',
       dataTransferredOut: '2.1 GB',
       blockedAttempts: 12
-    }
+    },
+    defaultTaskPriority: 'medium'
   },
 ];
 
@@ -346,16 +356,43 @@ const INITIAL_LOGS: AuditLog[] = [
 ];
 
 const INITIAL_DOCUMENTS: JarvisDocument[] = [
-  { id: 'd1', name: 'tax_return_2025.pdf', classification: 30, stage: 'publish', status: 'completed' },
-  { id: 'd2', name: 'project_alpha_spec.docx', classification: 20, stage: 'process', status: 'pending' },
-  { id: 'd3', name: 'family_photo_metadata.json', classification: 10, stage: 'ingest', status: 'completed' },
-  { id: 'd4', name: 'unraid_config_backup.sh', classification: 40, stage: 'publish', status: 'failed' },
+  { id: 'd1', name: 'tax_return_2025.pdf', classification: 30, stage: 'publish', status: 'completed', progress: 100 },
+  { id: 'd2', name: 'project_alpha_spec.docx', classification: 20, stage: 'process', status: 'pending', progress: 65 },
+  { id: 'd3', name: 'family_photo_metadata.json', classification: 10, stage: 'ingest', status: 'completed', progress: 100 },
+  { id: 'd4', name: 'unraid_config_backup.sh', classification: 40, stage: 'publish', status: 'failed', progress: 40 },
+  { id: 'd5', name: 'IMG_4821.HEIC', classification: 10, stage: 'publish', status: 'completed', progress: 100 },
+  { id: 'd6', name: 'IMG_4822.HEIC', classification: 10, stage: 'publish', status: 'completed', progress: 100 },
 ];
 
+const INITIAL_FINANCIAL_GOALS: FinancialGoal[] = [
+  { id: 'g1', title: 'Emergency Fund', targetAmount: 15000, currentAmount: 8500, deadline: '2026-06-01', type: 'short' },
+  { id: 'g2', title: 'New Car', targetAmount: 35000, currentAmount: 12000, deadline: '2026-12-31', type: 'short' },
+  { id: 'g3', title: 'Home Down Payment', targetAmount: 120000, currentAmount: 45000, deadline: '2029-01-01', type: 'long' },
+  { id: 'g4', title: 'Investment Property', targetAmount: 250000, currentAmount: 30000, deadline: '2034-01-01', type: 'long' },
+];
+
+const INITIAL_BUDGET: BudgetItem[] = [
+  { id: 'b1', category: 'Housing', allocated: 2200, spent: 2200, icon: 'Home' },
+  { id: 'b2', category: 'Groceries', allocated: 600, spent: 450, icon: 'ShoppingBag' },
+  { id: 'b3', category: 'Utilities', allocated: 350, spent: 310, icon: 'Zap' },
+  { id: 'b4', category: 'Entertainment', allocated: 200, spent: 185, icon: 'Film' },
+  { id: 'b5', category: 'Transport', allocated: 400, spent: 380, icon: 'Car' },
+  { id: 'b6', category: 'Savings', allocated: 1000, spent: 1000, icon: 'PiggyBank' },
+];
+
+const INITIAL_RETIREMENT: RetirementData = {
+  currentSavings: 145000,
+  monthlyContribution: 1500,
+  expectedReturn: 7,
+  retirementAge: 65,
+  currentAge: 32,
+  targetAmount: 2500000,
+};
+
 const INITIAL_SCHEDULED_TASKS: ScheduledTask[] = [
-  { id: 't1', title: 'Deep Research: Quantum Computing Trends', description: 'Analyze 50+ papers and summarize findings.', startTime: '2026-03-17 02:00', status: 'queued', priority: 'high', model: 'Gemini 3 Pro', retryStrategy: 'exponential' },
-  { id: 't2', title: 'Unraid Data Scrub & Parity Check', description: 'Full array integrity verification.', startTime: '2026-03-17 03:00', status: 'queued', priority: 'medium', model: 'Llama 3', retryStrategy: 'none' },
-  { id: 't3', title: 'Finance Archive Indexing', description: 'OCR and classify 2024 receipts.', startTime: '2026-03-16 23:00', status: 'running', priority: 'medium', model: 'Gemini 3 Flash', retryStrategy: 'aggressive' },
+  { id: 't1', title: 'Deep Research: Quantum Computing Trends', description: 'Analyze 50+ papers and summarize findings.', startTime: '2026-03-17 02:00', status: 'queued', priority: 'high', model: 'Gemini 3 Pro', agentId: 'a3', retryStrategy: 'exponential' },
+  { id: 't2', title: 'Unraid Data Scrub & Parity Check', description: 'Full array integrity verification.', startTime: '2026-03-17 03:00', status: 'queued', priority: 'medium', model: 'Llama 3', agentId: 'a2', retryStrategy: 'none' },
+  { id: 't3', title: 'Finance Archive Indexing', description: 'OCR and classify 2024 receipts.', startTime: '2026-03-16 23:00', status: 'running', priority: 'medium', model: 'Gemini 3 Flash', agentId: 'a1', retryStrategy: 'aggressive' },
 ];
 
 const POLICIES = [
@@ -682,17 +719,26 @@ const CodeView = ({
   theme, 
   isGithubConnected, 
   setIsGithubConnected, 
-  githubRepos 
+  githubRepos,
+  setGithubRepos
 }: { 
   theme: 'light' | 'dark',
   isGithubConnected: boolean,
   setIsGithubConnected: (val: boolean) => void,
-  githubRepos: { name: string, stars: number, language: string }[]
+  githubRepos: GithubRepo[],
+  setGithubRepos: React.Dispatch<React.SetStateAction<GithubRepo[]>>
 }) => {
   const [selectedFile, setSelectedFile] = useState('agent_orchestrator.ts');
   const [viewMode, setViewMode] = useState<'local' | 'github'>('local');
-  
-  const files = [
+  const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null);
+  const [selectedGithubFile, setSelectedGithubFile] = useState<string | null>(null);
+  const [isConnectingGithub, setIsConnectingGithub] = useState(false);
+  const [connectProgress, setConnectProgress] = useState(0);
+  const [connectError, setConnectError] = useState<string | null>(null);
+  const [connectStep, setConnectStep] = useState<string>('');
+  const [editingFileName, setEditingFileName] = useState<string | null>(null);
+  const [tempFileName, setTempFileName] = useState('');
+  const [localFiles, setLocalFiles] = useState([
     { name: 'agent_orchestrator.ts', size: '12.4 KB', type: 'typescript', lastEdit: '2h ago', content: `/**
  * JARVIS Agent Orchestrator v3.2
  * Handles multi-agent task distribution and mTLS mesh communication.
@@ -750,9 +796,134 @@ class UnraidMount:
     "mtls_required": true
   }
 }` }
-  ];
+  ]);
 
-  const currentFile = files.find(f => f.name === selectedFile) || files[0];
+  const currentLocalFile = localFiles.find(f => f.name === selectedFile) || localFiles[0];
+  const currentGithubFile = selectedRepo?.files.find(f => f.name === selectedGithubFile) || selectedRepo?.files[0];
+
+  const handleConnectGithub = () => {
+    setIsConnectingGithub(true);
+    setConnectError(null);
+    setConnectProgress(0);
+    setConnectStep('Initializing OAuth flow...');
+    
+    // Simulate multi-step OAuth flow
+    const steps = [
+      { progress: 20, step: 'Redirecting to GitHub...' },
+      { progress: 40, step: 'Waiting for user authorization...' },
+      { progress: 60, step: 'Exchanging code for access token...' },
+      { progress: 80, step: 'Fetching user profile and repositories...' },
+      { progress: 100, step: 'Connection established!' }
+    ];
+
+    let currentStepIdx = 0;
+    const interval = setInterval(() => {
+      if (currentStepIdx < steps.length) {
+        const currentStep = steps[currentStepIdx];
+        
+        // Randomly fail at step 3 (60%) to demonstrate error handling
+        if (currentStep.progress === 60 && Math.random() < 0.3) {
+          clearInterval(interval);
+          setConnectError('OAuth exchange failed: Invalid client secret or expired code.');
+          setIsConnectingGithub(false);
+          setConnectStep('Error');
+          return;
+        }
+
+        setConnectProgress(currentStep.progress);
+        setConnectStep(currentStep.step);
+        currentStepIdx++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsGithubConnected(true);
+          setIsConnectingGithub(false);
+          setViewMode('github');
+          setConnectProgress(0);
+          setConnectStep('');
+        }, 500);
+      }
+    }, 800);
+  };
+
+  const handleCreateRepo = () => {
+    const repoName = prompt('Enter new repository name:');
+    if (!repoName) return;
+    if (githubRepos.find(r => r.name === repoName)) {
+      alert('Repository already exists');
+      return;
+    }
+    const newRepo: GithubRepo = {
+      name: repoName,
+      stars: 0,
+      language: 'TypeScript',
+      files: [
+        { name: 'README.md', content: `# ${repoName}\n\nCreated via JARVIS Code Interface.` },
+        { name: 'index.ts', content: '// Initial entry point' }
+      ]
+    };
+    setGithubRepos([...githubRepos, newRepo]);
+    setSelectedRepo(newRepo);
+    setSelectedGithubFile('README.md');
+  };
+
+  const handleCreateFile = () => {
+    const fileName = prompt('Enter new file name:');
+    if (!fileName) return;
+    if (localFiles.find(f => f.name === fileName)) {
+      alert('File already exists');
+      return;
+    }
+    const newFile = {
+      name: fileName,
+      size: '0 KB',
+      type: fileName.split('.').pop() || 'text',
+      lastEdit: 'Just now',
+      content: '// New file content'
+    };
+    setLocalFiles([...localFiles, newFile]);
+    setSelectedFile(fileName);
+  };
+
+  const handleDeleteFile = (e: React.MouseEvent, fileName: string) => {
+    e.stopPropagation();
+    if (localFiles.length <= 1) {
+      alert('Cannot delete the last file');
+      return;
+    }
+    if (confirm(`Are you sure you want to delete ${fileName}?`)) {
+      const newFiles = localFiles.filter(f => f.name !== fileName);
+      setLocalFiles(newFiles);
+      if (selectedFile === fileName) {
+        setSelectedFile(newFiles[0].name);
+      }
+    }
+  };
+
+  const handleRenameFile = (e: React.MouseEvent, oldName: string) => {
+    e.stopPropagation();
+    setEditingFileName(oldName);
+    setTempFileName(oldName);
+  };
+
+  const handleSaveRename = (oldName: string) => {
+    const newName = tempFileName.trim();
+    if (!newName || newName === oldName) {
+      setEditingFileName(null);
+      return;
+    }
+    if (localFiles.find(f => f.name === newName)) {
+      alert('File already exists');
+      return;
+    }
+    setLocalFiles(localFiles.map(f => 
+      f.name === oldName ? { ...f, name: newName } : f
+    ));
+    if (selectedFile === oldName) {
+      setSelectedFile(newName);
+    }
+    setEditingFileName(null);
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(100vh-160px)]">
@@ -762,7 +933,41 @@ class UnraidMount:
         <div className={`p-4 border-b text-[10px] font-mono uppercase opacity-50 flex items-center justify-between ${
           theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'
         }`}>
-          <span>Repository Explorer</span>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span>Repository Explorer</span>
+              {isGithubConnected && (
+                <div className="flex items-center gap-1 text-[7px] text-emerald-500 font-bold">
+                  <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                  Connected
+                </div>
+              )}
+              {!isGithubConnected && (
+                <button 
+                  onClick={handleConnectGithub}
+                  disabled={isConnectingGithub}
+                  className={`ml-2 px-2 py-0.5 rounded-full text-[8px] font-bold border transition-all flex items-center gap-1 ${
+                    theme === 'light' ? 'border-[#141414] bg-[#141414] text-[#E4E3E0]' : 'border-emerald-500 bg-emerald-500 text-[#0A0A0A]'
+                  } disabled:opacity-50`}
+                >
+                  {isConnectingGithub ? (
+                    <div className="flex items-center gap-1">
+                      <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                      <span>{connectProgress}%</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Github className="w-2.5 h-2.5" />
+                      {connectError ? 'Retry' : 'Connect'}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            {isGithubConnected && (
+              <span className="text-[7px] opacity-30 lowercase">Last synced: Just now</span>
+            )}
+          </div>
           <div className="flex gap-2">
             <button 
               onClick={() => setViewMode('local')}
@@ -780,74 +985,270 @@ class UnraidMount:
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {viewMode === 'local' ? (
-            files.map(file => (
-              <button
-                key={file.name}
-                onClick={() => setSelectedFile(file.name)}
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                  selectedFile === file.name
-                    ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
-                    : (theme === 'light' ? 'hover:bg-[#141414]/5' : 'hover:bg-white/5')
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <FileCode className="w-4 h-4 opacity-50" />
-                  <div className="text-left">
-                    <p className="text-xs font-bold font-mono">{file.name}</p>
-                    <p className="text-[8px] opacity-50 uppercase">{file.size} • {file.lastEdit}</p>
-                  </div>
+            <>
+              <div className="px-2 py-2 mb-2 flex items-center justify-between">
+                <p className="text-[10px] font-mono uppercase opacity-50">Local Files</p>
+                <button 
+                  onClick={handleCreateFile}
+                  className="p-1 rounded hover:bg-emerald-500/20 text-emerald-500 transition-all"
+                  title="New File"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              {localFiles.map(file => (
+                <div key={file.name} className="relative group">
+                  {editingFileName === file.name ? (
+                    <div className={`flex items-center gap-2 p-2 rounded-xl border ${
+                      theme === 'light' ? 'bg-white border-[#141414]' : 'bg-white/10 border-emerald-500'
+                    }`}>
+                      <FileCode className="w-4 h-4 opacity-50 flex-shrink-0" />
+                      <input
+                        autoFocus
+                        type="text"
+                        value={tempFileName}
+                        onChange={(e) => setTempFileName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveRename(file.name);
+                          if (e.key === 'Escape') setEditingFileName(null);
+                        }}
+                        onBlur={() => handleSaveRename(file.name)}
+                        className="flex-1 bg-transparent border-none outline-none text-xs font-mono font-bold p-0"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedFile(file.name)}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                        selectedFile === file.name
+                          ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                          : (theme === 'light' ? 'hover:bg-[#141414]/5' : 'hover:bg-white/5')
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <FileCode className="w-4 h-4 opacity-50 flex-shrink-0" />
+                        <div className="text-left truncate">
+                          <p className="text-xs font-bold font-mono truncate">{file.name}</p>
+                          <p className="text-[8px] opacity-50 uppercase">{file.size} • {file.lastEdit}</p>
+                        </div>
+                      </div>
+                      <div className={`flex items-center gap-1 transition-opacity ${selectedFile === file.name ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                        <button 
+                          onClick={(e) => handleRenameFile(e, file.name)}
+                          className={`p-1 rounded hover:bg-white/20 ${selectedFile === file.name ? 'text-white/70 hover:text-white' : 'text-emerald-500'}`}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+                        <button 
+                          onClick={(e) => handleDeleteFile(e, file.name)}
+                          className={`p-1 rounded hover:bg-white/20 ${selectedFile === file.name ? 'text-white/70 hover:text-white' : 'text-rose-500'}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </button>
+                  )}
                 </div>
-              </button>
-            ))
+              ))}
+              {!isGithubConnected && (
+                <button
+                  onClick={handleConnectGithub}
+                  disabled={isConnectingGithub}
+                  className={`w-full mt-4 flex items-center gap-3 p-4 rounded-xl border border-dashed transition-all ${
+                    theme === 'light' ? 'border-[#141414]/20 hover:border-[#141414] bg-[#141414]/5' : 'border-white/10 hover:border-emerald-500/50 bg-white/5'
+                  } disabled:opacity-50`}
+                >
+                  <div className="relative">
+                    <Github className={`w-5 h-5 ${isConnectingGithub ? 'opacity-100' : 'opacity-50'}`} />
+                    {isConnectingGithub && (
+                      <RefreshCw className="absolute -top-1 -right-1 w-2.5 h-2.5 animate-spin text-emerald-500" />
+                    )}
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="text-xs font-bold">
+                      {isConnectingGithub ? connectStep : connectError ? 'Connection Failed' : 'Connect GitHub'}
+                    </p>
+                    <p className="text-[8px] opacity-50 uppercase">
+                      {isConnectingGithub ? `Progress: ${connectProgress}%` : connectError ? 'Click to try again' : 'View your remote repositories'}
+                    </p>
+                  </div>
+                  {isConnectingGithub && (
+                    <div className="w-12 h-1 bg-[#141414]/10 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${connectProgress}%` }}
+                        className="h-full bg-emerald-500"
+                      />
+                    </div>
+                  )}
+                </button>
+              )}
+            </>
           ) : (
             <div className="space-y-4 p-2">
               {!isGithubConnected ? (
-                <div className="text-center py-8 space-y-4">
-                  <Github className="w-12 h-12 mx-auto opacity-20" />
-                  <p className="text-[10px] font-mono uppercase opacity-50">GitHub not connected</p>
+                <div className="text-center py-8 space-y-6">
+                  <div className="relative inline-block">
+                    <Github className={`w-16 h-16 mx-auto transition-all ${isConnectingGithub ? 'opacity-100 scale-110' : 'opacity-20'}`} />
+                    {isConnectingGithub && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="absolute inset-0 flex items-center justify-center"
+                      >
+                        <RefreshCw className="w-6 h-6 animate-spin text-emerald-500 opacity-50" />
+                      </motion.div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-mono uppercase opacity-50">
+                      {isConnectingGithub ? connectStep : connectError ? 'Connection failed' : 'GitHub not connected'}
+                    </p>
+                    {isConnectingGithub && (
+                      <div className="w-48 mx-auto h-1 bg-[#141414]/10 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${connectProgress}%` }}
+                          className="h-full bg-emerald-500"
+                        />
+                      </div>
+                    )}
+                    {connectError && (
+                      <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 max-w-[240px] mx-auto">
+                        <div className="flex items-center gap-2 text-rose-500 mb-1">
+                          <ShieldAlert className="w-3 h-3" />
+                          <span className="text-[10px] font-bold uppercase">Auth Error</span>
+                        </div>
+                        <p className="text-[9px] text-rose-500/80 leading-relaxed">{connectError}</p>
+                      </div>
+                    )}
+                  </div>
+
                   <button 
-                    onClick={() => setIsGithubConnected(true)}
-                    className={`w-full py-2 rounded-xl text-[10px] font-bold uppercase border transition-all ${
+                    onClick={handleConnectGithub}
+                    disabled={isConnectingGithub}
+                    className={`w-full py-3 rounded-xl text-[10px] font-bold uppercase border transition-all flex items-center justify-center gap-2 ${
                       theme === 'light' ? 'border-[#141414] bg-[#141414] text-[#E4E3E0]' : 'border-emerald-500 bg-emerald-500 text-[#0A0A0A]'
-                    }`}
+                    } disabled:opacity-50 shadow-xl`}
                   >
-                    Connect Account
+                    {isConnectingGithub ? (
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Github className="w-3 h-3" />
+                    )}
+                    {isConnectingGithub ? 'Connecting...' : connectError ? 'Try Again' : 'Connect Account'}
                   </button>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-[10px] font-mono uppercase opacity-50">Your Repositories</p>
-                    <button 
-                      onClick={() => setIsGithubConnected(false)}
-                      className="text-[8px] font-mono uppercase opacity-30 hover:opacity-100"
-                    >
-                      Disconnect
-                    </button>
+                    <p className="text-[10px] font-mono uppercase opacity-50">
+                      {selectedRepo ? (
+                        <button 
+                          onClick={() => {
+                            setSelectedRepo(null);
+                            setSelectedGithubFile(null);
+                          }}
+                          className="flex items-center gap-1 hover:text-emerald-500 transition-colors"
+                        >
+                          <ChevronLeftIcon className="w-3 h-3" /> Back to Repos
+                        </button>
+                      ) : (
+                        <div className="flex flex-col">
+                          <span>Your Repositories</span>
+                          <span className="text-[7px] opacity-30">Last synced: Just now</span>
+                        </div>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {!selectedRepo && (
+                        <>
+                          <button 
+                            onClick={() => {
+                              setIsConnectingGithub(true);
+                              setTimeout(() => setIsConnectingGithub(false), 1000);
+                            }}
+                            className="p-1 rounded hover:bg-emerald-500/20 text-emerald-500 transition-all"
+                            title="Refresh Repositories"
+                          >
+                            <RefreshCw className={`w-3 h-3 ${isConnectingGithub ? 'animate-spin' : ''}`} />
+                          </button>
+                          <button 
+                            onClick={handleCreateRepo}
+                            className="p-1 rounded hover:bg-emerald-500/20 text-emerald-500 transition-all"
+                            title="New Repository"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                      <button 
+                        onClick={() => {
+                          setIsGithubConnected(false);
+                          setSelectedRepo(null);
+                          setSelectedGithubFile(null);
+                        }}
+                        className="text-[8px] font-mono uppercase opacity-30 hover:opacity-100"
+                      >
+                        Disconnect
+                      </button>
+                    </div>
                   </div>
-                  {githubRepos.map(repo => (
-                    <button
-                      key={repo.name}
-                      className={`w-full flex flex-col p-3 rounded-xl border transition-all ${
-                        theme === 'light' ? 'bg-white border-[#141414]/10 hover:border-[#141414]' : 'bg-white/5 border-white/10 hover:border-emerald-500/50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <div className="flex items-center gap-2">
-                          <GitBranch className="w-3 h-3 opacity-50" />
-                          <span className="text-xs font-bold font-mono">{repo.name}</span>
-                        </div>
-                        <ExternalLink className="w-3 h-3 opacity-30" />
+                  
+                  {selectedRepo ? (
+                    <div className="space-y-1">
+                      <div className="p-3 mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <p className="text-[10px] font-bold font-mono text-emerald-500">{selectedRepo.name}</p>
+                        <p className="text-[8px] opacity-50 uppercase">{selectedRepo.language}</p>
                       </div>
-                      <div className="flex items-center gap-3 opacity-50">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-2.5 h-2.5" />
-                          <span className="text-[10px]">{repo.stars}</span>
+                      {selectedRepo.files.map(file => (
+                        <button
+                          key={file.name}
+                          onClick={() => setSelectedGithubFile(file.name)}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                            selectedGithubFile === file.name
+                              ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                              : (theme === 'light' ? 'hover:bg-[#141414]/5' : 'hover:bg-white/5')
+                          }`}
+                        >
+                          <FileCode className="w-4 h-4 opacity-50" />
+                          <p className="text-xs font-bold font-mono">{file.name}</p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    githubRepos.map(repo => (
+                      <button
+                        key={repo.name}
+                        onClick={() => {
+                          setSelectedRepo(repo);
+                          setSelectedGithubFile(repo.files[0].name);
+                        }}
+                        className={`w-full flex flex-col p-3 rounded-xl border transition-all text-left ${
+                          theme === 'light' ? 'bg-white border-[#141414]/10 hover:border-[#141414]' : 'bg-white/5 border-white/10 hover:border-emerald-500/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full mb-1">
+                          <div className="flex items-center gap-2">
+                            <GitBranch className="w-3 h-3 opacity-50" />
+                            <span className="text-xs font-bold font-mono">{repo.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[8px] font-mono uppercase">View Project</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </div>
                         </div>
-                        <span className="text-[10px] font-mono">{repo.language}</span>
-                      </div>
-                    </button>
-                  ))}
+                        <div className="flex items-center gap-3 opacity-50">
+                          <div className="flex items-center gap-1">
+                            <Star className="w-2.5 h-2.5" />
+                            <span className="text-[10px]">{repo.stars}</span>
+                          </div>
+                          <span className="text-[10px] font-mono">{repo.language}</span>
+                        </div>
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -860,7 +1261,14 @@ class UnraidMount:
         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
           <div className="flex items-center gap-3">
             <Terminal className="w-4 h-4 text-emerald-500" />
-            <span className="text-xs font-mono">{currentFile.name}</span>
+            <span className="text-xs font-mono">
+              {viewMode === 'local' ? currentLocalFile.name : (currentGithubFile?.name || 'No file selected')}
+            </span>
+            {viewMode === 'github' && selectedRepo && (
+              <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-500 text-[8px] font-bold uppercase">
+                GitHub: {selectedRepo.name}
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500" />
@@ -870,7 +1278,7 @@ class UnraidMount:
         </div>
         <div className="flex-1 p-6 overflow-auto font-mono text-xs leading-relaxed">
           <pre className="opacity-80">
-            {currentFile.content}
+            {viewMode === 'local' ? currentLocalFile.content : (currentGithubFile?.content || '// Select a file to view content')}
           </pre>
         </div>
       </div>
@@ -1018,9 +1426,11 @@ const ArchitectureView = ({ theme }: { theme: 'light' | 'dark' }) => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [agentSubTab, setAgentSubTab] = useState<'health' | 'security' | 'api'>('health');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [nodes] = useState<Node[]>(INITIAL_NODES);
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
+  const [agentProofs, setAgentProofs] = useState<AgentProof[]>(INITIAL_AGENT_PROOFS);
   const [logs] = useState<AuditLog[]>(INITIAL_LOGS);
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>(INITIAL_SCHEDULED_TASKS);
   const [costs] = useState<CostEntry[]>(INITIAL_COSTS);
@@ -1030,26 +1440,112 @@ export default function App() {
   const [matrixRoutes] = useState<MatrixRoute[]>(INITIAL_MATRIX_ROUTES);
   const [vulnerabilities] = useState<SecurityVulnerability[]>(INITIAL_SECURITY_VULNERABILITIES);
   const [ports] = useState<PortStatus[]>(INITIAL_PORT_STATUS);
-  const [agentProofs] = useState<AgentProof[]>(INITIAL_AGENT_PROOFS);
   const [toolUsage] = useState<ToolUsage[]>(INITIAL_TOOL_USAGE);
   const [monthlyBudget, setMonthlyBudget] = useState(500);
+  
+  // Financial State
+  const [financialGoals] = useState<FinancialGoal[]>(INITIAL_FINANCIAL_GOALS);
+  const [budgetItems] = useState<BudgetItem[]>(INITIAL_BUDGET);
+  const [retirementData] = useState<RetirementData>(INITIAL_RETIREMENT);
   
   // Document Ingestion State
   const [documents, setDocuments] = useState<JarvisDocument[]>(INITIAL_DOCUMENTS);
   const [ingestionClass, setIngestionClass] = useState(10);
   const [isScanning, setIsScanning] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isICloudSyncing, setIsICloudSyncing] = useState(false);
+  const [isAutoSortEnabled, setIsAutoSortEnabled] = useState(true);
+  const [lastICloudSync, setLastICloudSync] = useState<string | null>('2026-03-19 14:22');
+  const [isVerifyingProofs, setIsVerifyingProofs] = useState(false);
+
+  const handleVerifyHashes = () => {
+    setIsVerifyingProofs(true);
+    
+    // Set all to verifying
+    setAgentProofs(prev => prev.map(p => ({ ...p, verificationStatus: 'verifying' })));
+    
+    // Simulate blockchain verification
+    setTimeout(() => {
+      setAgentProofs(prev => prev.map(p => ({
+        ...p,
+        // Randomly fail some (10% chance)
+        verificationStatus: Math.random() > 0.1 ? 'verified' : 'invalid'
+      })));
+      setIsVerifyingProofs(false);
+    }, 2500);
+  };
+
+  const handleICloudSync = () => {
+    setIsICloudSyncing(true);
+    // Simulate sync and AI sorting
+    setTimeout(() => {
+      const newPhotos: JarvisDocument[] = [
+        { id: `ic-${Date.now()}-1`, name: `IMG_${Math.floor(Math.random() * 9000) + 1000}.HEIC`, classification: 10, stage: 'ingest', status: 'pending', progress: 0 },
+        { id: `ic-${Date.now()}-2`, name: `IMG_${Math.floor(Math.random() * 9000) + 1000}.HEIC`, classification: 10, stage: 'ingest', status: 'pending', progress: 0 },
+        { id: `ic-${Date.now()}-3`, name: `IMG_${Math.floor(Math.random() * 9000) + 1000}.HEIC`, classification: 10, stage: 'ingest', status: 'pending', progress: 0 },
+      ];
+      setDocuments(prev => [...newPhotos, ...prev]);
+      
+      // Simulate pipeline for each photo
+      newPhotos.forEach((photo, index) => {
+        setTimeout(() => {
+          setDocuments(prev => prev.map(d => d.id === photo.id ? { ...d, stage: 'process', progress: 30 } : d));
+          
+          setTimeout(() => {
+            if (isAutoSortEnabled) {
+              setDocuments(prev => prev.map(d => d.id === photo.id ? { ...d, stage: 'sort', progress: 65 } : d));
+            }
+            
+            setTimeout(() => {
+              setDocuments(prev => prev.map(d => d.id === photo.id ? { ...d, stage: 'publish', status: 'completed', progress: 100 } : d));
+            }, 2000 + (index * 500));
+          }, 1500 + (index * 500));
+        }, 1000 + (index * 500));
+      });
+
+      const now = new Date();
+      setLastICloudSync(now.toISOString().replace('T', ' ').split('.')[0].slice(0, 16));
+      setIsICloudSyncing(false);
+    }, 2000);
+  };
 
   // Wizard State
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [selectedAgentForSecurity, setSelectedAgentForSecurity] = useState<Agent | null>(null);
-  const [modalTab, setModalTab] = useState<'security' | 'api' | 'violations' | 'network'>('security');
+  const [modalTab, setModalTab] = useState<'security' | 'api' | 'violations' | 'network' | 'actions'>('security');
   const [scanningAgentId, setScanningAgentId] = useState<string | null>(null);
+  const [executingActionId, setExecutingActionId] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [isGithubConnected, setIsGithubConnected] = useState(false);
-  const [githubRepos, setGithubRepos] = useState([
-    { name: 'jarvis-core', stars: 124, language: 'TypeScript' },
-    { name: 'brain-node', stars: 89, language: 'Python' },
-    { name: 'matrix-router', stars: 45, language: 'Go' }
+  const [githubRepos, setGithubRepos] = useState<GithubRepo[]>([
+    { 
+      name: 'jarvis-core', 
+      stars: 124, 
+      language: 'TypeScript',
+      files: [
+        { name: 'index.ts', content: '// Core entry point\nexport * from "./engine";\n\nconsole.log("JARVIS Core Initialized");' },
+        { name: 'engine.ts', content: 'export class Engine {\n  start() {\n    console.log("Engine started");\n  }\n\n  stop() {\n    console.log("Engine stopped");\n  }\n}' },
+        { name: 'package.json', content: '{\n  "name": "jarvis-core",\n  "version": "1.0.0",\n  "dependencies": {\n    "typescript": "^5.0.0"\n  }\n}' }
+      ]
+    },
+    { 
+      name: 'brain-node', 
+      stars: 89, 
+      language: 'Python',
+      files: [
+        { name: 'main.py', content: 'import time\n\ndef process_thought():\n    print("Thinking...")\n    time.sleep(1)\n    print("Thought processed")\n\nif __name__ == "__main__":\n    process_thought()' },
+        { name: 'requirements.txt', content: 'numpy==1.24.0\npandas==2.0.0' }
+      ]
+    },
+    { 
+      name: 'matrix-router', 
+      stars: 45, 
+      language: 'Go',
+      files: [
+        { name: 'main.go', content: 'package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println("Matrix routing active")\n}' },
+        { name: 'go.mod', content: 'module matrix-router\n\ngo 1.20' }
+      ]
+    }
   ]);
 
   const handleScanNow = (agentId: string) => {
@@ -1057,13 +1553,25 @@ export default function App() {
     // Simulate scan delay
     setTimeout(() => {
       const now = new Date();
-      const timestamp = now.toISOString().replace('T', ' ').split('.')[0];
+      const timestamp = now.toISOString().replace('T', ' ').split('.')[0].slice(0, 16);
       setAgents(prev => prev.map(a => 
         a.id === agentId ? { ...a, lastSecurityScan: timestamp } : a
       ));
+      if (selectedAgentForSecurity?.id === agentId) {
+        setSelectedAgentForSecurity(prev => prev ? { ...prev, lastSecurityScan: timestamp } : null);
+      }
       setScanningAgentId(null);
     }, 2000);
   };
+  const handleExecuteAction = (actionId: string) => {
+    setExecutingActionId(actionId);
+    setTimeout(() => {
+      setExecutingActionId(null);
+      setActionSuccess(actionId);
+      setTimeout(() => setActionSuccess(null), 3000);
+    }, 1500);
+  };
+
   const [wizardStep, setWizardStep] = useState(1);
   const [newAgentData, setNewAgentData] = useState<Partial<Agent>>({
     name: '',
@@ -1072,6 +1580,7 @@ export default function App() {
     allowedTools: [],
     classification: 10,
     model: 'Llama 3 (Local)',
+    defaultTaskPriority: 'medium',
   });
 
   // Chat State
@@ -1083,6 +1592,7 @@ export default function App() {
   const [chatMode, setChatMode] = useState<'realtime' | 'overnight'>('realtime');
   const [selectedModel, setSelectedModel] = useState('Gemini 3 Flash');
   const [taskPriority, setTaskPriority] = useState<ScheduledTask['priority']>('medium');
+  const [selectedAgentForTask, setSelectedAgentForTask] = useState<string | null>(null);
   const [retryStrategy, setRetryStrategy] = useState<ScheduledTask['retryStrategy']>('exponential');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -1109,6 +1619,7 @@ export default function App() {
           status: 'queued',
           priority: taskPriority,
           model: selectedModel,
+          agentId: selectedAgentForTask || undefined,
           retryStrategy: retryStrategy
         };
         setScheduledTasks(prev => [newTask, ...prev]);
@@ -1177,6 +1688,14 @@ export default function App() {
       ...newAgentData as Agent,
       id: `a${Date.now()}`,
       lastInvocation: 'Never',
+      health: 100,
+      cpuUsage: 0,
+      memoryUsage: 0,
+      securityScore: 100,
+      status: 'active',
+      vulnerabilities: [],
+      policyViolations: [],
+      lastSecurityScan: new Date().toISOString(),
     };
     setAgents(prev => [agent, ...prev]);
     setIsWizardOpen(false);
@@ -1188,6 +1707,7 @@ export default function App() {
       allowedTools: [],
       classification: 10,
       model: 'Llama 3 (Local)',
+      defaultTaskPriority: 'medium',
     });
   };
 
@@ -1201,7 +1721,9 @@ export default function App() {
     { id: 'security', label: 'Security', icon: ShieldAlert },
     { id: 'errors', label: 'Errors', icon: Bug },
     { id: 'governance', label: 'Governance', icon: ShieldCheck },
+    { id: 'proofs', label: 'Agent Proofs', icon: History },
     { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'finance', label: 'Finance', icon: Wallet },
     { id: 'cost', label: 'Cost Center', icon: DollarSign },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -1510,19 +2032,48 @@ export default function App() {
                 className="h-[calc(100vh-12rem)] flex gap-6"
               >
                 {/* Main Chat Area */}
-                <div className="flex-1 border border-[#141414] rounded-2xl bg-white/50 flex flex-col overflow-hidden shadow-2xl">
+                <motion.div 
+                  animate={isTyping ? { 
+                    borderColor: ['#141414', '#f59e0b', '#141414'],
+                    boxShadow: [
+                      '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                      '0 0 30px rgba(245, 158, 11, 0.15)',
+                      '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                    ]
+                  } : {}}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="flex-1 border border-[#141414] rounded-2xl bg-white/50 flex flex-col overflow-hidden shadow-2xl relative"
+                >
                   <div className="p-4 border-b border-[#141414] bg-[#141414]/5 flex items-center justify-between">
                     <div className="flex items-center gap-3 relative">
-                      {isTyping && (
-                        <motion.div 
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.5, 0.2] }}
+                      <div className="relative">
+                        {isTyping && (
+                          <motion.div 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: [1, 1.8, 1], opacity: [0.3, 0.6, 0.3] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="absolute -inset-2 bg-amber-500/30 rounded-full blur-xl"
+                          />
+                        )}
+                        <motion.div
+                          animate={isTyping ? { 
+                            rotate: [0, 5, -5, 0],
+                            scale: [1, 1.1, 1],
+                            color: ['#141414', '#f59e0b', '#141414']
+                          } : {}}
                           transition={{ duration: 2, repeat: Infinity }}
-                          className="absolute -inset-2 bg-amber-500/20 rounded-full blur-xl"
-                        />
-                      )}
-                      <div className={`w-3 h-3 rounded-full relative z-10 ${isTyping ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                      <p className="text-xs font-bold uppercase tracking-widest relative z-10">Brain Session: {isTyping ? 'Thinking...' : 'Active'}</p>
+                          className="relative z-10"
+                        >
+                          <Brain className={`w-5 h-5 ${isTyping ? 'text-amber-500' : 'text-[#141414]'}`} />
+                        </motion.div>
+                      </div>
+                      <div className="flex flex-col">
+                        <p className="text-[10px] font-bold uppercase tracking-widest relative z-10 leading-none">Brain Core</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className={`w-1.5 h-1.5 rounded-full relative z-10 ${isTyping ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                          <p className="text-[8px] font-mono uppercase opacity-50 relative z-10">{isTyping ? 'Thinking...' : 'Active'}</p>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex bg-[#141414]/5 p-1 rounded-lg border border-[#141414]/10">
@@ -1568,7 +2119,17 @@ export default function App() {
                         <div className={`w-8 h-8 rounded border border-[#141414] flex items-center justify-center ${
                           msg.role === 'model' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-white text-[#141414]'
                         }`}>
-                          {msg.role === 'model' ? <Zap className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
+                          {msg.role === 'model' ? (
+                            <motion.div
+                              animate={isTyping ? { 
+                                color: ['#E4E3E0', '#f59e0b', '#E4E3E0'],
+                                scale: [1, 1.1, 1]
+                              } : {}}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            >
+                              <Zap className="w-4 h-4" />
+                            </motion.div>
+                          ) : <UserIcon className="w-4 h-4" />}
                         </div>
                         <div className={`flex-1 space-y-2 ${msg.role === 'user' ? 'text-right' : ''}`}>
                           <div className="flex items-center gap-2 opacity-50 text-[10px] uppercase justify-start flex-row">
@@ -1586,7 +2147,15 @@ export default function App() {
                     {isTyping && (
                       <div className="flex gap-4">
                         <div className="w-8 h-8 rounded border border-[#141414] flex items-center justify-center bg-[#141414] text-[#E4E3E0]">
-                          <Zap className="w-4 h-4" />
+                          <motion.div
+                            animate={{ 
+                              color: ['#E4E3E0', '#f59e0b', '#E4E3E0'],
+                              scale: [1, 1.2, 1]
+                            }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          >
+                            <Zap className="w-4 h-4" />
+                          </motion.div>
                         </div>
                         <div className="flex-1 space-y-2">
                           <p className="opacity-50 text-[10px] uppercase">JARVIS</p>
@@ -1602,6 +2171,16 @@ export default function App() {
                   </div>
 
                   <div className={`p-6 border-t ${theme === 'dark' ? 'border-white/10 bg-[#141414]' : 'border-[#141414] bg-white'} space-y-4`}>
+                    {isTyping && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/5 border border-amber-500/20 rounded-lg"
+                      >
+                        <Activity className="w-3 h-3 text-amber-500 animate-pulse" />
+                        <span className="text-[9px] font-mono text-amber-500 uppercase tracking-wider">Neural Processing in Progress...</span>
+                      </motion.div>
+                    )}
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => setChatMode('realtime')}
@@ -1637,8 +2216,30 @@ export default function App() {
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`grid grid-cols-2 gap-4 p-4 ${theme === 'dark' ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-indigo-500/5 border-indigo-500/20'} border rounded-xl`}
+                        className={`grid grid-cols-3 gap-4 p-4 ${theme === 'dark' ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-indigo-500/5 border-indigo-500/20'} border rounded-xl`}
                       >
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-mono uppercase opacity-50">Assign Agent</p>
+                          <select 
+                            value={selectedAgentForTask || ''}
+                            onChange={(e) => {
+                              const agentId = e.target.value;
+                              setSelectedAgentForTask(agentId);
+                              const agent = agents.find(a => a.id === agentId);
+                              if (agent) {
+                                setTaskPriority(agent.defaultTaskPriority);
+                              }
+                            }}
+                            className={`w-full py-1.5 px-2 rounded-lg border text-[9px] font-mono uppercase transition-all focus:outline-none ${
+                              theme === 'dark' ? 'bg-[#141414] border-white/10 text-[#E4E3E0]' : 'bg-white border-[#141414]/10 text-[#141414]'
+                            }`}
+                          >
+                            <option value="">Auto-Select</option>
+                            {agents.map(a => (
+                              <option key={a.id} value={a.id}>{a.name}</option>
+                            ))}
+                          </select>
+                        </div>
                         <div className="space-y-2">
                           <p className="text-[9px] font-mono uppercase opacity-50">Task Priority</p>
                           <div className="flex gap-1">
@@ -1704,7 +2305,7 @@ export default function App() {
                       </button>
                     </form>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Scheduled Tasks Sidebar */}
                 <div className={`w-80 border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white/50'} rounded-2xl flex flex-col overflow-hidden shadow-xl`}>
@@ -1798,7 +2399,35 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Agent Lifecycle Pipeline */}
+                {/* Sub-menu Navigation */}
+                <div className="flex gap-8 border-b border-current/10 pb-4 mb-8">
+                  {[
+                    { id: 'health', label: 'Health Monitoring', icon: Activity },
+                    { id: 'security', label: 'Security Overview', icon: Shield },
+                    { id: 'api', label: 'API Call Log', icon: Terminal },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setAgentSubTab(tab.id as any)}
+                      className={`flex items-center gap-2 text-sm font-bold transition-all relative ${
+                        agentSubTab === tab.id ? 'opacity-100' : 'opacity-40 hover:opacity-70'
+                      }`}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      {tab.label}
+                      {agentSubTab === tab.id && (
+                        <motion.div 
+                          layoutId="agentSubTabUnderline"
+                          className="absolute -bottom-[17px] left-0 right-0 h-0.5 bg-emerald-500"
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {agentSubTab === 'health' && (
+                  <>
+                    {/* Agent Lifecycle Pipeline */}
                 <section className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -1909,9 +2538,20 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="relative z-10">
-                          <h4 className="font-bold text-lg">{agent.name}</h4>
-                          <p className="text-xs opacity-50 font-mono uppercase">{agent.role}</p>
+                        <div className="relative z-10 flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-lg">{agent.name}</h4>
+                            <p className="text-xs opacity-50 font-mono uppercase">{agent.role}</p>
+                          </div>
+                          <div className={`px-2 py-1 rounded-lg border flex items-center gap-1.5 ${
+                            theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#141414]/5 border-[#141414]/10'
+                          }`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${
+                              agent.defaultTaskPriority === 'high' ? 'bg-rose-500' : 
+                              agent.defaultTaskPriority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
+                            }`} />
+                            <span className="text-[8px] font-mono font-bold uppercase opacity-50">DEF PRIO: {agent.defaultTaskPriority}</span>
+                          </div>
                         </div>
 
                         {/* Health Dashboard */}
@@ -2009,7 +2649,18 @@ export default function App() {
 
                         {/* Tool Usage Monitoring */}
                         <div className="space-y-3 relative z-10">
-                          <p className="text-[10px] font-mono uppercase opacity-50 border-b pb-1 border-current/10">Tool Usage Monitor</p>
+                          <div className="flex items-center justify-between border-b pb-1 border-current/10">
+                            <p className="text-[10px] font-mono uppercase opacity-50">Tool Usage Monitor</p>
+                            <button 
+                              onClick={() => {
+                                setSelectedAgentForSecurity(agent);
+                                setModalTab('api');
+                              }}
+                              className="text-[8px] font-mono uppercase font-bold text-emerald-500 hover:underline"
+                            >
+                              View Full Log
+                            </button>
+                          </div>
                           <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
                             {toolUsage.filter(u => u.agentId === agent.id).map(usage => (
                               <div key={usage.id} className={`p-2 rounded-lg border ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#141414]/5 border-[#141414]/10'} space-y-1`}>
@@ -2149,8 +2800,120 @@ export default function App() {
                     ))}
                   </div>
                 </section>
+              </>
+            )}
+
+            {agentSubTab === 'security' && (
+              <motion.div
+                key="agents-security"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-8"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {agents.map((agent) => (
+                    <div key={agent.id} className={`p-6 border rounded-2xl ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-[#141414]/10'} space-y-6`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-xl border ${theme === 'dark' ? 'border-white/20 bg-white/10' : 'border-[#141414] bg-[#141414]/5'} flex items-center justify-center`}>
+                            <Shield className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-lg">{agent.name}</h4>
+                            <p className="text-xs opacity-50 font-mono uppercase">{agent.role}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-mono uppercase opacity-50">Security Score</p>
+                          <p className={`text-2xl font-black ${
+                            (agent.securityScore || 0) > 80 ? 'text-emerald-500' : (agent.securityScore || 0) > 50 ? 'text-amber-500' : 'text-rose-500'
+                          }`}>{agent.securityScore}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#141414]/5 border-[#141414]/10'}`}>
+                          <p className="text-[10px] font-mono uppercase opacity-50 mb-2">Vulnerabilities</p>
+                          <p className="text-xl font-bold">{agent.vulnerabilities?.length || 0}</p>
+                        </div>
+                        <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#141414]/5 border-[#141414]/10'}`}>
+                          <p className="text-[10px] font-mono uppercase opacity-50 mb-2">Policy Violations</p>
+                          <p className="text-xl font-bold">{agent.policyViolations?.length || 0}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-mono uppercase opacity-50">Allowed Tools</p>
+                        <div className="flex flex-wrap gap-2">
+                          {agent.allowedTools.map(tool => (
+                            <span key={tool} className={`text-[10px] font-mono px-2 py-1 rounded border ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#141414]/5 border-[#141414]/10'}`}>
+                              {tool}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-current/10 flex justify-between items-center">
+                        <div className="text-[10px] font-mono opacity-50">
+                          Last Scan: {agent.lastSecurityScan || 'Never'}
+                        </div>
+                        <button 
+                          onClick={() => handleScanNow(agent.id)}
+                          className="text-[10px] font-bold font-mono uppercase text-emerald-500 hover:underline"
+                        >
+                          Run Full Audit
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             )}
+
+            {agentSubTab === 'api' && (
+              <motion.div
+                key="agents-api"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-8"
+              >
+                <div className={`border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white'} rounded-2xl overflow-hidden`}>
+                  <div className={`grid grid-cols-6 p-4 border-b ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-[#141414]/5'} text-[10px] font-mono uppercase opacity-50`}>
+                    <div className="col-span-1">Timestamp</div>
+                    <div className="col-span-1">Agent</div>
+                    <div className="col-span-1">Tool</div>
+                    <div className="col-span-2">Parameters</div>
+                    <div className="col-span-1 text-right">Status</div>
+                  </div>
+                  <div className="divide-y divide-current/10 max-h-[600px] overflow-y-auto custom-scrollbar">
+                    {toolUsage.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed)).map((usage) => {
+                      const agent = agents.find(a => a.id === usage.agentId);
+                      return (
+                        <div key={usage.id} className="grid grid-cols-6 p-4 text-xs hover:bg-current/5 transition-colors items-center">
+                          <div className="col-span-1 font-mono opacity-50">{usage.lastUsed}</div>
+                          <div className="col-span-1 font-bold">{agent?.name || 'Unknown'}</div>
+                          <div className="col-span-1">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                              {usage.toolName}
+                            </span>
+                          </div>
+                          <div className="col-span-2 font-mono opacity-70 truncate pr-4" title={usage.parameters}>
+                            {usage.parameters}
+                          </div>
+                          <div className="col-span-1 text-right">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 uppercase">
+                              Success
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
 
             {activeTab === 'governance' && (
               <motion.div
@@ -2233,17 +2996,61 @@ export default function App() {
                     ))}
                   </div>
                 </section>
+              </motion.div>
+            )}
+
+            {activeTab === 'proofs' && (
+              <motion.div
+                key="proofs"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                {/* Agent Proof of Action Header */}
+                <div className={`p-8 border rounded-3xl transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${
+                  theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                }`}>
+                  <div className="flex items-center gap-6">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                      theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]'
+                    }`}>
+                      <History className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-bold tracking-tighter">Agent Proof of Action</h2>
+                      <p className="text-sm opacity-50 font-mono uppercase text-emerald-500">Immutable Action Logs & Verification</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={handleVerifyHashes}
+                      disabled={isVerifyingProofs}
+                      className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 ${
+                        isVerifyingProofs ? 'opacity-50 cursor-not-allowed' : ''
+                      } ${
+                        theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]'
+                      }`}
+                    >
+                      {isVerifyingProofs ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Fingerprint className="w-4 h-4" />
+                      )}
+                      {isVerifyingProofs ? 'Verifying on Ledger...' : 'Verify All Hashes'}
+                    </button>
+                  </div>
+                </div>
 
                 {/* Agent Proof of Action Section */}
                 <section className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-serif italic text-2xl">Agent Proof of Action (Stage Verification)</h3>
+                    <h3 className="font-serif italic text-2xl">Action Log (Stage Verification)</h3>
                     <div className="flex gap-2">
-                      <button className={`px-3 py-1 rounded-full text-[10px] font-mono uppercase border transition-all ${
-                        theme === 'light' ? 'border-[#141414]/10 hover:bg-[#141414]/5' : 'border-white/10 hover:bg-white/5'
-                      }`}>
-                        <Fingerprint className="w-3 h-3 inline mr-1" /> Verify All Hashes
-                      </button>
+                      <div className="flex items-center gap-4 text-[10px] font-mono uppercase opacity-50">
+                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Production</div>
+                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" /> Review</div>
+                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> Staging</div>
+                      </div>
                     </div>
                   </div>
                   <div className={`border rounded-xl overflow-hidden transition-colors ${
@@ -2282,8 +3089,29 @@ export default function App() {
                             {proof.stage}
                           </span>
                         </div>
-                        <div className="text-[10px] font-mono opacity-50 truncate pr-4" title={proof.hash}>
-                          {proof.hash}
+                        <div className="flex items-center gap-2">
+                          <div className="text-[10px] font-mono opacity-50 truncate pr-4" title={proof.hash}>
+                            {proof.hash}
+                          </div>
+                          {proof.verificationStatus && (
+                            <div className="flex items-center">
+                              {proof.verificationStatus === 'verifying' && (
+                                <RefreshCw className="w-3 h-3 animate-spin text-blue-500" />
+                              )}
+                              {proof.verificationStatus === 'verified' && (
+                                <div className="flex items-center gap-1 text-[9px] text-emerald-500 font-bold uppercase">
+                                  <ShieldCheck className="w-3 h-3" />
+                                  <span>Verified</span>
+                                </div>
+                              )}
+                              {proof.verificationStatus === 'invalid' && (
+                                <div className="flex items-center gap-1 text-[9px] text-red-500 font-bold uppercase">
+                                  <ShieldAlert className="w-3 h-3" />
+                                  <span>Invalid</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right text-[10px] font-mono opacity-50">
                           {proof.timestamp}
@@ -2395,7 +3223,93 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="lg:col-span-2 space-y-4">
+                  <div className={`lg:col-span-1 p-6 border rounded-2xl space-y-6 flex flex-col justify-between ${
+                    theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                  }`}>
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Cloud className="w-5 h-5 text-blue-500" />
+                          <h4 className="font-bold tracking-tight">iCloud Photos Sync</h4>
+                        </div>
+                        <p className="text-xs opacity-50 text-pretty">Automatically sync and sort your iCloud library to Unraid using JARVIS AI.</p>
+                      </div>
+
+                      <div className={`p-4 rounded-xl border space-y-4 ${
+                        theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <ImageIcon className="w-4 h-4 opacity-50" />
+                            <span className="text-xs font-bold">AI Auto-Sorting</span>
+                          </div>
+                          <button 
+                            onClick={() => setIsAutoSortEnabled(!isAutoSortEnabled)}
+                            className={`w-8 h-4 rounded-full relative transition-colors ${
+                              isAutoSortEnabled 
+                                ? (theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500') 
+                                : (theme === 'light' ? 'bg-[#141414]/20' : 'bg-white/10')
+                            }`}
+                          >
+                            <motion.div 
+                              animate={{ x: isAutoSortEnabled ? 18 : 2 }}
+                              className="absolute top-1 w-2 h-2 rounded-full bg-white" 
+                            />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Server className="w-4 h-4 opacity-50" />
+                            <span className="text-xs font-bold">Unraid Destination</span>
+                          </div>
+                          <span className="text-[10px] font-mono opacity-50">/mnt/user/photos/ai_sorted</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <History className="w-4 h-4 opacity-50" />
+                            <span className="text-xs font-bold">Last Sync</span>
+                          </div>
+                          <span className="text-[10px] font-mono opacity-50">{lastICloudSync || 'Never'}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-[10px] font-mono uppercase opacity-50">
+                          <span>Sync Progress</span>
+                          <span>{isICloudSyncing ? 'Active' : 'Idle'}</span>
+                        </div>
+                        <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/10' : 'bg-white/10'}`}>
+                          <motion.div 
+                            animate={{ 
+                              x: isICloudSyncing ? ['-100%', '100%'] : '0%',
+                              width: isICloudSyncing ? '30%' : '0%'
+                            }}
+                            transition={{ 
+                              duration: 1.5, 
+                              repeat: Infinity, 
+                              ease: "linear" 
+                            }}
+                            className={`h-full ${theme === 'light' ? 'bg-[#141414]' : 'bg-blue-500'}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={handleICloudSync}
+                      disabled={isICloudSyncing}
+                      className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 mt-4 ${
+                        isICloudSyncing ? 'opacity-50 cursor-not-allowed' : ''
+                      } ${
+                        theme === 'light' ? 'border-[#141414] border-2 hover:bg-[#141414] hover:text-[#E4E3E0]' : 'border-blue-500/50 border-2 hover:bg-blue-500/20 text-blue-400'
+                      }`}
+                    >
+                      {isICloudSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cloud className="w-4 h-4" />}
+                      {isICloudSyncing ? 'Syncing Photos...' : 'Sync iCloud Photos'}
+                    </button>
+                  </div>
+
+                  <div className="lg:col-span-1 space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold tracking-tight">Active Pipeline</h4>
                       <span className="text-[10px] font-mono opacity-50 uppercase">{documents.length} Documents</span>
@@ -2420,29 +3334,61 @@ export default function App() {
                             <FileText className="w-4 h-4 opacity-30" />
                             {doc.name}
                           </div>
-                          <div><ClassificationBadge level={doc.classification} theme={theme} /></div>
+                          <div className="flex items-center gap-2">
+                            <select 
+                              value={doc.classification}
+                              onChange={(e) => {
+                                const newLevel = parseInt(e.target.value);
+                                setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, classification: newLevel } : d));
+                              }}
+                              className={`text-[10px] font-mono border rounded px-1 py-0.5 focus:outline-none focus:ring-1 ${
+                                theme === 'light' 
+                                  ? 'bg-white border-[#141414]/20 focus:ring-[#141414]/20' 
+                                  : 'bg-[#141414] border-white/20 focus:ring-white/20'
+                              }`}
+                            >
+                              {[10, 20, 30, 40, 50].map(level => (
+                                <option key={level} value={level}>T{level}</option>
+                              ))}
+                            </select>
+                            <ClassificationBadge level={doc.classification} theme={theme} />
+                          </div>
                           <div className="flex items-center gap-2">
                             <div className={`w-16 h-1 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/10' : 'bg-white/10'}`}>
-                              <div className={`h-full ${theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500'} ${
-                                doc.stage === 'ingest' ? 'w-1/3' : doc.stage === 'process' ? 'w-2/3' : 'w-full'
-                              }`} />
+                              <div 
+                                className={`h-full ${theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500'} transition-all duration-500`} 
+                                style={{ width: `${doc.progress ?? (doc.stage === 'ingest' ? 25 : doc.stage === 'process' ? 50 : doc.stage === 'sort' ? 75 : 100)}%` }}
+                              />
                             </div>
                             <span className="text-[8px] font-mono uppercase opacity-50">{doc.stage}</span>
                           </div>
-                          <div>
-                            {doc.status === 'completed' ? (
-                              <span className={`${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
-                                <CheckCircle2 className="w-2.5 h-2.5" /> Ready
-                              </span>
-                            ) : doc.status === 'pending' ? (
-                              <span className={`${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
-                                <Clock className="w-2.5 h-2.5 animate-pulse" /> Processing
-                              </span>
-                            ) : (
-                              <span className={`${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
-                                <AlertTriangle className="w-2.5 h-2.5" /> Failed
-                              </span>
-                            )}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              {doc.status === 'completed' ? (
+                                <span className={`${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
+                                  <CheckCircle2 className="w-2.5 h-2.5" /> Ready
+                                </span>
+                              ) : doc.status === 'pending' ? (
+                                <span className={`${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
+                                  <Clock className="w-2.5 h-2.5 animate-pulse" /> Processing
+                                </span>
+                              ) : (
+                                <span className={`${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'} flex items-center gap-1 text-[9px] font-bold uppercase`}>
+                                  <AlertTriangle className="w-2.5 h-2.5" /> Failed
+                                </span>
+                              )}
+                              <span className="text-[8px] font-mono opacity-50">{doc.progress || 0}%</span>
+                            </div>
+                            <div className={`w-full h-1 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${doc.progress || 0}%` }}
+                                className={`h-full ${
+                                  doc.status === 'failed' ? 'bg-rose-500' : 
+                                  doc.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'
+                                }`}
+                              />
+                            </div>
                           </div>
                           <div className="flex gap-1 justify-end">
                             <button className={`p-1 rounded transition-colors ${theme === 'light' ? 'hover:bg-[#141414]/10' : 'hover:bg-white/10'}`}><Eye className="w-3.5 h-3.5" /></button>
@@ -2467,6 +3413,7 @@ export default function App() {
                   isGithubConnected={isGithubConnected}
                   setIsGithubConnected={setIsGithubConnected}
                   githubRepos={githubRepos}
+                  setGithubRepos={setGithubRepos}
                 />
               </motion.div>
             )}
@@ -2478,6 +3425,240 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
               >
                 <ArchitectureView theme={theme} />
+              </motion.div>
+            )}
+
+            {activeTab === 'finance' && (
+              <motion.div
+                key="finance"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif italic text-3xl">Financial Command</h3>
+                  <div className="flex gap-4">
+                    <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                      <PiggyBank className="w-4 h-4 text-emerald-500" />
+                      <div>
+                        <p className="text-[10px] font-mono opacity-50 uppercase">Total Savings</p>
+                        <p className="text-sm font-bold">${(retirementData.currentSavings + financialGoals.reduce((acc, g) => acc + g.currentAmount, 0)).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                      <TrendingUp className="w-4 h-4 text-blue-500" />
+                      <div>
+                        <p className="text-[10px] font-mono opacity-50 uppercase">Monthly Growth</p>
+                        <p className="text-sm font-bold">+${retirementData.monthlyContribution.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Monthly Budget */}
+                  <div className={`lg:col-span-1 p-6 border rounded-2xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h4 className="font-bold tracking-tight">Monthly Budget</h4>
+                        <p className="text-xs opacity-50">Current month allocation vs spend.</p>
+                      </div>
+                      <PieChart className="w-5 h-5 opacity-30" />
+                    </div>
+
+                    <div className="space-y-4">
+                      {budgetItems.map(item => (
+                        <div key={item.id} className="space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium">{item.category}</span>
+                            <span className="opacity-50">${item.spent} / ${item.allocated}</span>
+                          </div>
+                          <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(item.spent / item.allocated) * 100}%` }}
+                              className={`h-full ${
+                                item.spent > item.allocated ? 'bg-rose-500' : 
+                                item.spent > item.allocated * 0.9 ? 'bg-amber-500' : 'bg-emerald-500'
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={`p-4 rounded-xl border space-y-2 ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono uppercase opacity-50">Total Budget</span>
+                        <span className="text-sm font-bold">${budgetItems.reduce((acc, i) => acc + i.allocated, 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono uppercase opacity-50">Remaining</span>
+                        <span className="text-sm font-bold text-emerald-500">
+                          ${(budgetItems.reduce((acc, i) => acc + i.allocated, 0) - budgetItems.reduce((acc, i) => acc + i.spent, 0)).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financial Goals */}
+                  <div className="lg:col-span-2 space-y-8">
+                    {/* Short Term */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold tracking-tight">Short-Term Goals (3mo - 1yr)</h4>
+                        <span className="text-[10px] font-mono opacity-50 uppercase">Active Targets</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {financialGoals.filter(g => g.type === 'short').map(goal => (
+                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-sm">{goal.title}</span>
+                              <span className="text-[10px] font-mono opacity-50">{goal.deadline}</span>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-[10px] font-mono">
+                                <span>Progress</span>
+                                <span>{Math.round((goal.currentAmount / goal.targetAmount) * 100)}%</span>
+                              </div>
+                              <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${(goal.currentAmount / goal.targetAmount) * 100}%` }}
+                                  className="h-full bg-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] font-mono opacity-50">
+                                <span>${goal.currentAmount.toLocaleString()}</span>
+                                <span>${goal.targetAmount.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Long Term */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold tracking-tight">Long-Term Goals (4yr - 10yr)</h4>
+                        <span className="text-[10px] font-mono opacity-50 uppercase">Future Horizons</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {financialGoals.filter(g => g.type === 'long').map(goal => (
+                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-sm">{goal.title}</span>
+                              <span className="text-[10px] font-mono opacity-50">{goal.deadline}</span>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-[10px] font-mono">
+                                <span>Progress</span>
+                                <span>{Math.round((goal.currentAmount / goal.targetAmount) * 100)}%</span>
+                              </div>
+                              <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${(goal.currentAmount / goal.targetAmount) * 100}%` }}
+                                  className="h-full bg-indigo-500"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] font-mono opacity-50">
+                                <span>${goal.currentAmount.toLocaleString()}</span>
+                                <span>${goal.targetAmount.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Retirement Section */}
+                    <div className={`p-6 border rounded-2xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h4 className="font-bold tracking-tight">Retirement Projection</h4>
+                          <p className="text-xs opacity-50">Estimated growth based on current contributions.</p>
+                        </div>
+                        <Landmark className="w-5 h-5 opacity-30" />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="md:col-span-1 space-y-6">
+                          <div className="space-y-2">
+                            <p className="text-[10px] font-mono uppercase opacity-50">Current Nest Egg</p>
+                            <p className="text-2xl font-bold">${retirementData.currentSavings.toLocaleString()}</p>
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-[10px] font-mono uppercase opacity-50">Target at Age {retirementData.retirementAge}</p>
+                            <p className="text-2xl font-bold text-emerald-500">${retirementData.targetAmount.toLocaleString()}</p>
+                          </div>
+                          <div className="space-y-4 pt-4">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="opacity-50">Monthly Contribution</span>
+                              <span className="font-bold">${retirementData.monthlyContribution}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="opacity-50">Expected Return</span>
+                              <span className="font-bold">{retirementData.expectedReturn}%</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="opacity-50">Years to Retirement</span>
+                              <span className="font-bold">{retirementData.retirementAge - retirementData.currentAge} Years</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2 h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={[
+                              { year: 2026, amount: 145000 },
+                              { year: 2030, amount: 280000 },
+                              { year: 2035, amount: 520000 },
+                              { year: 2040, amount: 890000 },
+                              { year: 2045, amount: 1450000 },
+                              { year: 2050, amount: 2100000 },
+                              { year: 2055, amount: 2800000 },
+                            ]}>
+                              <defs>
+                                <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor={theme === 'light' ? '#141414' : '#10b981'} stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor={theme === 'light' ? '#141414' : '#10b981'} stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'light' ? '#14141410' : '#ffffff10'} />
+                              <XAxis 
+                                dataKey="year" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 10, fill: theme === 'light' ? '#14141450' : '#ffffff50' }}
+                              />
+                              <YAxis 
+                                hide 
+                              />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: theme === 'light' ? '#E4E3E0' : '#0A0A0A',
+                                  border: theme === 'light' ? '1px solid #14141410' : '1px solid #ffffff10',
+                                  borderRadius: '8px',
+                                  fontSize: '12px'
+                                }}
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="amount" 
+                                stroke={theme === 'light' ? '#141414' : '#10b981'} 
+                                strokeWidth={2}
+                                fillOpacity={1} 
+                                fill="url(#colorAmount)" 
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -2543,17 +3724,7 @@ export default function App() {
                     theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
                   }`}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={YEARLY_SPENDING_DATA}>
-                        <defs>
-                          <linearGradient id="colorAi" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorInfra" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
+                      <BarChart data={YEARLY_SPENDING_DATA}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'light' ? '#14141410' : '#ffffff10'} />
                         <XAxis 
                           dataKey="month" 
@@ -2568,19 +3739,20 @@ export default function App() {
                           tickFormatter={(value) => `$${value}`}
                         />
                         <Tooltip 
+                          cursor={{ fill: theme === 'light' ? '#14141405' : '#ffffff05' }}
                           contentStyle={{ 
                             backgroundColor: theme === 'light' ? '#fff' : '#141414', 
-                            border: 'none', 
+                            border: theme === 'light' ? '1px solid #14141410' : '1px solid #ffffff10', 
                             borderRadius: '12px',
                             boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
                             fontSize: '12px',
                             fontFamily: 'monospace'
                           }}
                         />
-                        <Area type="monotone" dataKey="ai" stroke="#3b82f6" fillOpacity={1} fill="url(#colorAi)" strokeWidth={2} />
-                        <Area type="monotone" dataKey="infra" stroke="#10b981" fillOpacity={1} fill="url(#colorInfra)" strokeWidth={2} />
-                        <Area type="monotone" dataKey="subs" stroke="#f59e0b" fillOpacity={0} strokeWidth={2} strokeDasharray="5 5" />
-                      </AreaChart>
+                        <Bar dataKey="ai" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="infra" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="subs" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </section>
@@ -3133,7 +4305,29 @@ export default function App() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-serif italic">Agent Intelligence & Security</h2>
-                    <p className="text-xs font-mono uppercase opacity-50">Agent: {selectedAgentForSecurity.name}</p>
+                    <div className="flex items-center gap-4">
+                      <p className="text-xs font-mono uppercase opacity-50">Agent: {selectedAgentForSecurity.name}</p>
+                      <div className="h-3 w-px bg-white/10" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono uppercase opacity-50">Last Scan:</span>
+                        <span className="text-[10px] font-mono font-bold">{selectedAgentForSecurity.lastSecurityScan || 'Never'}</span>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleScanNow(selectedAgentForSecurity.id);
+                          }}
+                          disabled={scanningAgentId === selectedAgentForSecurity.id}
+                          className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[8px] font-mono uppercase transition-all ${
+                            scanningAgentId === selectedAgentForSecurity.id 
+                              ? 'bg-rose-500/20 border-rose-500/30 text-rose-500 animate-pulse' 
+                              : 'bg-rose-500 border-rose-500 text-white hover:bg-rose-600'
+                          }`}
+                        >
+                          <RefreshCw className={`w-2 h-2 ${scanningAgentId === selectedAgentForSecurity.id ? 'animate-spin' : ''}`} />
+                          {scanningAgentId === selectedAgentForSecurity.id ? 'Scanning...' : 'Scan Now'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <button 
@@ -3193,26 +4387,233 @@ export default function App() {
                     <motion.div layoutId="modalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
                   )}
                 </button>
+                <button 
+                  onClick={() => setModalTab('actions')}
+                  className={`pb-4 text-xs font-mono uppercase font-bold transition-all relative ${
+                    modalTab === 'actions' ? 'text-indigo-500' : 'opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  Recommended Actions
+                  {modalTab === 'actions' && (
+                    <motion.div layoutId="modalTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500" />
+                  )}
+                </button>
               </div>
+
+              {/* Recommended Actions Tab Content */}
+              {modalTab === 'actions' && (
+                <div className="space-y-6">
+                  <section>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-xs font-mono uppercase font-bold flex items-center gap-2 text-indigo-500">
+                        <ListTodo className="w-3 h-3" />
+                        Mitigation Roadmap
+                      </h3>
+                      <span className="text-[10px] font-mono opacity-50">
+                        {(() => {
+                          const count = (selectedAgentForSecurity.vulnerabilities?.length || 0) + (selectedAgentForSecurity.policyViolations?.length || 0);
+                          return count === 0 ? '0 ACTIONS' : `${count} ACTIONS PENDING`;
+                        })()}
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {(() => {
+                        const actions: RecommendedAction[] = [];
+                        
+                        // Generate actions from vulnerabilities
+                        selectedAgentForSecurity.vulnerabilities?.forEach(v => {
+                          const titleLower = v.title.toLowerCase();
+                          if (titleLower.includes('library') || titleLower.includes('version') || titleLower.includes('outdated')) {
+                            actions.push({
+                              id: `act-v-${v.id}`,
+                              title: `Update ${v.target}`,
+                              description: `Apply security patch for ${v.title} to mitigate ${v.severity} risk. This will upgrade the dependency to a secure version.`,
+                              type: 'patch',
+                              severity: v.severity
+                            });
+                          } else if (titleLower.includes('access') || titleLower.includes('permission') || titleLower.includes('unencrypted') || titleLower.includes('exposed')) {
+                            actions.push({
+                              id: `act-v-${v.id}`,
+                              title: `Restrict ${v.target}`,
+                              description: `Enforce stricter access controls and encryption on ${v.target} to prevent unauthorized access and data exfiltration.`,
+                              type: 'policy',
+                              severity: v.severity
+                            });
+                          } else {
+                            actions.push({
+                              id: `act-v-${v.id}`,
+                              title: `Review ${v.target}`,
+                              description: `Conduct a manual security review of ${v.target} configuration to identify and fix potential misconfigurations.`,
+                              type: 'config',
+                              severity: v.severity
+                            });
+                          }
+                        });
+
+                        // Generate actions from policy violations
+                        selectedAgentForSecurity.policyViolations?.forEach(p => {
+                          const typeLower = p.type.toLowerCase();
+                          if (typeLower.includes('access')) {
+                            actions.push({
+                              id: `act-p-${p.id}`,
+                              title: `Revoke Tool Permissions`,
+                              description: `Temporarily revoke tool access for this agent until classification levels are reviewed and verified.`,
+                              type: 'policy',
+                              severity: p.severity
+                            });
+                          } else if (typeLower.includes('leakage')) {
+                            actions.push({
+                              id: `act-p-${p.id}`,
+                              title: `Enable PII Masking`,
+                              description: `Enable automatic PII masking for all tool outputs to prevent accidental data leakage.`,
+                              type: 'config',
+                              severity: p.severity
+                            });
+                          } else {
+                            actions.push({
+                              id: `act-p-${p.id}`,
+                              title: `Enforce ${p.type}`,
+                              description: `Update agent policy to strictly enforce ${p.type} and prevent future violations.`,
+                              type: 'policy',
+                              severity: p.severity
+                            });
+                          }
+                        });
+
+                        // Add some default actions if none generated
+                        if (actions.length === 0) {
+                          actions.push({
+                            id: 'act-default-1',
+                            title: 'Rotate API Keys',
+                            description: 'Regularly rotate API keys used by the agent to minimize impact of potential leaks.',
+                            type: 'config',
+                            severity: 'low'
+                          });
+                        }
+
+                        return actions.map((action) => (
+                          <div key={action.id} className={`p-4 rounded-xl border flex items-start gap-4 transition-all ${
+                            theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                          } ${actionSuccess === action.id ? 'opacity-50 scale-[0.98]' : ''}`}>
+                            <div className={`p-2 rounded-lg ${
+                              action.type === 'patch' ? 'bg-emerald-500/10 text-emerald-500' :
+                              action.type === 'config' ? 'bg-blue-500/10 text-blue-500' :
+                              'bg-amber-500/10 text-amber-500'
+                            }`}>
+                              {action.type === 'patch' ? <RefreshCw className={`w-4 h-4 ${executingActionId === action.id ? 'animate-spin' : ''}`} /> :
+                               action.type === 'config' ? <Settings className={`w-4 h-4 ${executingActionId === action.id ? 'animate-spin' : ''}`} /> :
+                               <ShieldCheck className={`w-4 h-4 ${executingActionId === action.id ? 'animate-spin' : ''}`} />}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <h4 className="text-sm font-bold">{action.title}</h4>
+                                <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded uppercase ${
+                                  action.severity === 'critical' ? 'bg-rose-500 text-white' :
+                                  action.severity === 'high' ? 'bg-rose-500/20 text-rose-500' :
+                                  'bg-amber-500/20 text-amber-500'
+                                }`}>
+                                  {action.severity}
+                                </span>
+                              </div>
+                              <p className="text-[11px] opacity-70 mt-1">{action.description}</p>
+                              <button 
+                                onClick={() => handleExecuteAction(action.id)}
+                                disabled={executingActionId !== null || actionSuccess === action.id}
+                                className={`mt-3 text-[10px] font-mono uppercase font-bold flex items-center gap-1 transition-all ${
+                                  actionSuccess === action.id ? 'text-emerald-500' : 
+                                  executingActionId === action.id ? 'text-indigo-500 animate-pulse' :
+                                  'text-indigo-500 hover:underline'
+                                }`}
+                              >
+                                {actionSuccess === action.id ? (
+                                  <>Mitigation Applied <CheckCircle2 className="w-3 h-3" /></>
+                                ) : executingActionId === action.id ? (
+                                  <>Executing... <RefreshCw className="w-3 h-3 animate-spin" /></>
+                                ) : (
+                                  <>Execute Action <ArrowUpRight className="w-3 h-3" /></>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </section>
+                </div>
+              )}
 
               {modalTab === 'security' && (
                 <>
-                  <div className="grid grid-cols-2 gap-6 mb-8">
-                <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
-                  <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Classification Level</p>
-                  <div className="flex items-center gap-2">
-                    <ClassificationBadge level={selectedAgentForSecurity.classification} theme={theme} />
-                    <span className="text-sm font-bold">Level {selectedAgentForSecurity.classification}</span>
+                  <div className="grid grid-cols-3 gap-6 mb-8">
+                    <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                      <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Classification Level</p>
+                      <div className="flex items-center gap-2">
+                        <ClassificationBadge level={selectedAgentForSecurity.classification} theme={theme} />
+                        <span className="text-sm font-bold">Level {selectedAgentForSecurity.classification}</span>
+                      </div>
+                    </div>
+                    <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                      <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Model Integrity</p>
+                      <div className="flex items-center gap-2">
+                        <Fingerprint className="w-4 h-4 text-emerald-500" />
+                        <span className="text-sm font-bold">{selectedAgentForSecurity.model}</span>
+                      </div>
+                    </div>
+                    <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                      <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Security Score</p>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-10">
+                          <svg className="w-full h-full" viewBox="0 0 36 36">
+                            <path
+                              className="stroke-current opacity-10"
+                              strokeWidth="3"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path
+                              className={`${(selectedAgentForSecurity.securityScore || 0) > 80 ? 'text-emerald-500' : (selectedAgentForSecurity.securityScore || 0) > 50 ? 'text-amber-500' : 'text-rose-500'} stroke-current`}
+                              strokeWidth="3"
+                              strokeDasharray={`${selectedAgentForSecurity.securityScore}, 100`}
+                              strokeLinecap="round"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <text x="18" y="21" className={`text-[10px] font-mono font-bold fill-current text-center ${theme === 'light' ? 'text-[#141414]' : 'text-white'}`} textAnchor="middle">{selectedAgentForSecurity.securityScore}</text>
+                          </svg>
+                        </div>
+                        <div className="group relative">
+                          <div className="flex items-center gap-1 text-[10px] font-mono opacity-50 cursor-help hover:opacity-100 transition-opacity">
+                            <Info className="w-3 h-3" />
+                            <span>Breakdown</span>
+                          </div>
+                          <div className={`absolute bottom-full left-0 mb-2 w-48 p-3 rounded-xl border shadow-2xl transition-all duration-200 opacity-0 group-hover:opacity-100 pointer-events-none z-50 ${
+                            theme === 'light' ? 'bg-white border-[#141414]/10 text-[#141414]' : 'bg-[#141414] border-white/10 text-white'
+                          }`}>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center border-b border-white/10 pb-1 mb-1">
+                                <span className="text-[9px] uppercase opacity-50">Base Score</span>
+                                <span className="text-[10px] font-bold">100</span>
+                              </div>
+                              <div className="flex justify-between items-center text-rose-500">
+                                <span className="text-[9px] uppercase">Vulnerabilities</span>
+                                <span className="text-[10px] font-bold">-{selectedAgentForSecurity.vulnerabilities?.length ? selectedAgentForSecurity.vulnerabilities.length * 5 : 0}</span>
+                              </div>
+                              <div className="flex justify-between items-center text-amber-500">
+                                <span className="text-[9px] uppercase">Policy Violations</span>
+                                <span className="text-[10px] font-bold">-{selectedAgentForSecurity.policyViolations?.length ? selectedAgentForSecurity.policyViolations.length * 3 : 0}</span>
+                              </div>
+                              <div className="pt-1 border-t border-white/10 flex justify-between items-center">
+                                <span className="text-[9px] uppercase opacity-50">Final Score</span>
+                                <span className={`text-[10px] font-bold ${(selectedAgentForSecurity.securityScore || 0) > 80 ? 'text-emerald-500' : (selectedAgentForSecurity.securityScore || 0) > 50 ? 'text-amber-500' : 'text-rose-500'}`}>
+                                  {selectedAgentForSecurity.securityScore}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
-                  <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Model Integrity</p>
-                  <div className="flex items-center gap-2">
-                    <Fingerprint className="w-4 h-4 text-emerald-500" />
-                    <span className="text-sm font-bold">{selectedAgentForSecurity.model}</span>
-                  </div>
-                </div>
-              </div>
 
               <div className="space-y-6">
                 <section>
@@ -3574,6 +4975,28 @@ export default function App() {
                       </p>
                     </div>
                     <div className="space-y-4">
+                      <label className="text-[10px] font-mono uppercase opacity-50">Default Task Priority</label>
+                      <div className="flex gap-2">
+                        {(['low', 'medium', 'high'] as const).map(p => (
+                          <button
+                            key={p}
+                            onClick={() => setNewAgentData({...newAgentData, defaultTaskPriority: p})}
+                            className={`flex-1 py-3 border rounded-xl font-mono text-xs uppercase transition-all flex flex-col items-center gap-1 ${
+                              newAgentData.defaultTaskPriority === p 
+                                ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' 
+                                : theme === 'dark' ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-white border-[#141414]/10 hover:border-[#141414]'
+                            }`}
+                          >
+                            <div className={`w-1.5 h-1.5 rounded-full ${
+                              p === 'high' ? 'bg-rose-500' : 
+                              p === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
+                            } ${newAgentData.defaultTaskPriority === p ? 'ring-2 ring-white/50' : ''}`} />
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-4">
                       <label className="text-[10px] font-mono uppercase opacity-50">Base Intelligence Model</label>
                       <div className="grid grid-cols-2 gap-3">
                         {['Llama 3 (Local)', 'Mistral (Local)', 'Gemini 3 Flash', 'Gemini 3 Pro'].map(model => (
@@ -3637,9 +5060,10 @@ export default function App() {
                   {wizardStep < 4 ? (
                     <button 
                       onClick={() => setWizardStep(prev => prev + 1)}
+                      disabled={wizardStep === 1 && (!newAgentData.name || !newAgentData.role)}
                       className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
                         theme === 'dark' ? 'bg-white text-[#141414] hover:bg-white/90' : 'bg-[#141414] text-[#E4E3E0] hover:bg-[#141414]/90'
-                      }`}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       Next <ChevronRightIcon className="w-4 h-4" />
                     </button>
