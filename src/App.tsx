@@ -76,6 +76,7 @@ import {
   RefreshCw,
   MoreVertical,
   MoreHorizontal,
+  Copy,
   Bell,
   Mail,
   HelpCircle,
@@ -214,6 +215,21 @@ const INITIAL_ERROR_LOGS: ErrorLog[] = [
   { id: 'e1', timestamp: '2026-03-16 15:45:12', source: 'TTS/STT Service', message: 'Connection timeout while reaching ElevenLabs API', severity: 'high', status: 'open' },
   { id: 'e2', timestamp: '2026-03-16 15:50:05', source: 'Postgres', message: 'High memory pressure detected on Brain node', severity: 'medium', status: 'investigating', assignedAgent: 'FinanceAnalyzer' },
   { id: 'e3', timestamp: '2026-03-16 16:05:22', source: 'vLLM', message: 'CUDA out of memory during long context inference', severity: 'critical', status: 'open' },
+];
+
+interface LegalDocument {
+  id: string;
+  title: string;
+  type: 'Business' | 'Trust' | 'Personal';
+  status: 'Active' | 'Draft' | 'Review Required';
+  lastUpdated: string;
+  summary: string;
+}
+
+const INITIAL_LEGAL_DOCS: LegalDocument[] = [
+  { id: 'l1', title: 'Haas Tech Solutions LLC', type: 'Business', status: 'Active', lastUpdated: '2025-12-10', summary: 'Single-member LLC registered in Delaware. Operating agreement in place.' },
+  { id: 'l2', title: 'The Haas Family Revocable Trust', type: 'Trust', status: 'Active', lastUpdated: '2026-01-15', summary: 'Primary estate planning vehicle. Includes real estate and investment accounts.' },
+  { id: 'l3', title: 'Asset Protection Strategy v2', type: 'Personal', status: 'Review Required', lastUpdated: '2025-06-20', summary: 'Overview of liability insurance and offshore holding structure.' },
 ];
 
 const INITIAL_USERS: JarvisUser[] = [
@@ -720,22 +736,56 @@ const CodeView = ({
   isGithubConnected, 
   setIsGithubConnected, 
   githubRepos,
-  setGithubRepos
+  setGithubRepos,
+  authMethod,
+  setAuthMethod,
+  sshKey,
+  setSshKey,
+  sshPublicKey,
+  setSshPublicKey,
+  isConnectingGithub,
+  setIsConnectingGithub,
+  connectProgress,
+  setConnectProgress,
+  connectError,
+  setConnectError,
+  connectStep,
+  setConnectStep,
+  isGeneratingKey,
+  setIsGeneratingKey,
+  handleGenerateSSHKey,
+  handleDerivePublicKey,
+  handleConnectGithub
 }: { 
   theme: 'light' | 'dark',
   isGithubConnected: boolean,
   setIsGithubConnected: (val: boolean) => void,
   githubRepos: GithubRepo[],
-  setGithubRepos: React.Dispatch<React.SetStateAction<GithubRepo[]>>
+  setGithubRepos: React.Dispatch<React.SetStateAction<GithubRepo[]>>,
+  authMethod: 'oauth' | 'ssh',
+  setAuthMethod: (val: 'oauth' | 'ssh') => void,
+  sshKey: string,
+  setSshKey: (val: string) => void,
+  sshPublicKey: string,
+  setSshPublicKey: (val: string) => void,
+  isConnectingGithub: boolean,
+  setIsConnectingGithub: (val: boolean) => void,
+  connectProgress: number,
+  setConnectProgress: (val: number) => void,
+  connectError: string | null,
+  setConnectError: (val: string | null) => void,
+  connectStep: string,
+  setConnectStep: (val: string) => void,
+  isGeneratingKey: boolean,
+  setIsGeneratingKey: (val: boolean) => void,
+  handleGenerateSSHKey: () => void,
+  handleDerivePublicKey: () => void,
+  handleConnectGithub: () => void
 }) => {
   const [selectedFile, setSelectedFile] = useState('agent_orchestrator.ts');
   const [viewMode, setViewMode] = useState<'local' | 'github'>('local');
   const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null);
   const [selectedGithubFile, setSelectedGithubFile] = useState<string | null>(null);
-  const [isConnectingGithub, setIsConnectingGithub] = useState(false);
-  const [connectProgress, setConnectProgress] = useState(0);
-  const [connectError, setConnectError] = useState<string | null>(null);
-  const [connectStep, setConnectStep] = useState<string>('');
   const [editingFileName, setEditingFileName] = useState<string | null>(null);
   const [tempFileName, setTempFileName] = useState('');
   const [localFiles, setLocalFiles] = useState([
@@ -800,51 +850,6 @@ class UnraidMount:
 
   const currentLocalFile = localFiles.find(f => f.name === selectedFile) || localFiles[0];
   const currentGithubFile = selectedRepo?.files.find(f => f.name === selectedGithubFile) || selectedRepo?.files[0];
-
-  const handleConnectGithub = () => {
-    setIsConnectingGithub(true);
-    setConnectError(null);
-    setConnectProgress(0);
-    setConnectStep('Initializing OAuth flow...');
-    
-    // Simulate multi-step OAuth flow
-    const steps = [
-      { progress: 20, step: 'Redirecting to GitHub...' },
-      { progress: 40, step: 'Waiting for user authorization...' },
-      { progress: 60, step: 'Exchanging code for access token...' },
-      { progress: 80, step: 'Fetching user profile and repositories...' },
-      { progress: 100, step: 'Connection established!' }
-    ];
-
-    let currentStepIdx = 0;
-    const interval = setInterval(() => {
-      if (currentStepIdx < steps.length) {
-        const currentStep = steps[currentStepIdx];
-        
-        // Randomly fail at step 3 (60%) to demonstrate error handling
-        if (currentStep.progress === 60 && Math.random() < 0.3) {
-          clearInterval(interval);
-          setConnectError('OAuth exchange failed: Invalid client secret or expired code.');
-          setIsConnectingGithub(false);
-          setConnectStep('Error');
-          return;
-        }
-
-        setConnectProgress(currentStep.progress);
-        setConnectStep(currentStep.step);
-        currentStepIdx++;
-      } else {
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsGithubConnected(true);
-          setIsConnectingGithub(false);
-          setViewMode('github');
-          setConnectProgress(0);
-          setConnectStep('');
-        }, 500);
-      }
-    }, 800);
-  };
 
   const handleCreateRepo = () => {
     const repoName = prompt('Enter new repository name:');
@@ -1051,45 +1056,114 @@ class UnraidMount:
                 </div>
               ))}
               {!isGithubConnected && (
-                <button
-                  onClick={handleConnectGithub}
-                  disabled={isConnectingGithub}
-                  className={`w-full mt-4 flex items-center gap-3 p-4 rounded-xl border border-dashed transition-all ${
-                    theme === 'light' ? 'border-[#141414]/20 hover:border-[#141414] bg-[#141414]/5' : 'border-white/10 hover:border-emerald-500/50 bg-white/5'
-                  } disabled:opacity-50`}
-                >
-                  <div className="relative">
-                    <Github className={`w-5 h-5 ${isConnectingGithub ? 'opacity-100' : 'opacity-50'}`} />
-                    {isConnectingGithub && (
-                      <RefreshCw className="absolute -top-1 -right-1 w-2.5 h-2.5 animate-spin text-emerald-500" />
-                    )}
+                <div className="space-y-4 mt-4">
+                  <div className="flex items-center gap-2 p-1 rounded-xl bg-[#141414]/5 border border-[#141414]/5">
+                    <button 
+                      onClick={() => setAuthMethod('oauth')}
+                      className={`flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase transition-all ${
+                        authMethod === 'oauth' 
+                          ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                          : 'opacity-50'
+                      }`}
+                    >
+                      OAuth
+                    </button>
+                    <button 
+                      onClick={() => setAuthMethod('ssh')}
+                      className={`flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase transition-all ${
+                        authMethod === 'ssh' 
+                          ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                          : 'opacity-50'
+                      }`}
+                    >
+                      SSH
+                    </button>
                   </div>
-                  <div className="text-left flex-1">
-                    <p className="text-xs font-bold">
-                      {isConnectingGithub ? connectStep : connectError ? 'Connection Failed' : 'Connect GitHub'}
-                    </p>
-                    <p className="text-[8px] opacity-50 uppercase">
-                      {isConnectingGithub ? `Progress: ${connectProgress}%` : connectError ? 'Click to try again' : 'View your remote repositories'}
-                    </p>
-                  </div>
-                  {isConnectingGithub && (
-                    <div className="w-12 h-1 bg-[#141414]/10 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${connectProgress}%` }}
-                        className="h-full bg-emerald-500"
+
+                  {authMethod === 'ssh' && !isConnectingGithub && (
+                    <div className="space-y-2">
+                      <textarea 
+                        value={sshKey}
+                        onChange={(e) => setSshKey(e.target.value)}
+                        placeholder="Paste SSH Private Key..."
+                        className={`w-full h-20 p-2 rounded-xl text-[9px] font-mono border outline-none transition-all resize-none ${
+                          theme === 'light' ? 'bg-white border-[#141414]/10 focus:border-[#141414]' : 'bg-white/5 border-white/10 focus:border-emerald-500/50'
+                        }`}
                       />
                     </div>
                   )}
-                </button>
+
+                  <button
+                    onClick={handleConnectGithub}
+                    disabled={isConnectingGithub}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border border-dashed transition-all ${
+                      theme === 'light' ? 'border-[#141414]/20 hover:border-[#141414] bg-[#141414]/5' : 'border-white/10 hover:border-emerald-500/50 bg-white/5'
+                    } disabled:opacity-50`}
+                  >
+                    <div className="relative">
+                      {authMethod === 'oauth' ? (
+                        <Github className={`w-5 h-5 ${isConnectingGithub ? 'opacity-100' : 'opacity-50'}`} />
+                      ) : (
+                        <Key className={`w-5 h-5 ${isConnectingGithub ? 'opacity-100' : 'opacity-50'}`} />
+                      )}
+                      {isConnectingGithub && (
+                        <RefreshCw className="absolute -top-1 -right-1 w-2.5 h-2.5 animate-spin text-emerald-500" />
+                      )}
+                    </div>
+                    <div className="text-left flex-1">
+                      <p className="text-xs font-bold">
+                        {isConnectingGithub ? connectStep : connectError ? 'Connection Failed' : `Connect via ${authMethod === 'oauth' ? 'GitHub' : 'SSH'}`}
+                      </p>
+                      <p className="text-[8px] opacity-50 uppercase">
+                        {isConnectingGithub ? `Progress: ${connectProgress}%` : connectError ? 'Click to try again' : 'View your remote repositories'}
+                      </p>
+                    </div>
+                    {isConnectingGithub && (
+                      <div className="w-12 h-1 bg-[#141414]/10 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${connectProgress}%` }}
+                          className="h-full bg-emerald-500"
+                        />
+                      </div>
+                    )}
+                  </button>
+                </div>
               )}
             </>
           ) : (
             <div className="space-y-4 p-2">
               {!isGithubConnected ? (
                 <div className="text-center py-8 space-y-6">
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <button 
+                      onClick={() => setAuthMethod('oauth')}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center gap-2 ${
+                        authMethod === 'oauth' 
+                          ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                          : (theme === 'light' ? 'bg-[#141414]/5 text-[#141414]/50' : 'bg-white/5 text-white/50')
+                      }`}
+                    >
+                      <Github className="w-3 h-3" /> OAuth
+                    </button>
+                    <button 
+                      onClick={() => setAuthMethod('ssh')}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center gap-2 ${
+                        authMethod === 'ssh' 
+                          ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                          : (theme === 'light' ? 'bg-[#141414]/5 text-[#141414]/50' : 'bg-white/5 text-white/50')
+                      }`}
+                    >
+                      <Key className="w-3 h-3" /> SSH Key
+                    </button>
+                  </div>
+
                   <div className="relative inline-block">
-                    <Github className={`w-16 h-16 mx-auto transition-all ${isConnectingGithub ? 'opacity-100 scale-110' : 'opacity-20'}`} />
+                    {authMethod === 'oauth' ? (
+                      <Github className={`w-16 h-16 mx-auto transition-all ${isConnectingGithub ? 'opacity-100 scale-110' : 'opacity-20'}`} />
+                    ) : (
+                      <Key className={`w-16 h-16 mx-auto transition-all ${isConnectingGithub ? 'opacity-100 scale-110' : 'opacity-20'}`} />
+                    )}
                     {isConnectingGithub && (
                       <motion.div 
                         initial={{ opacity: 0 }}
@@ -1101,19 +1175,89 @@ class UnraidMount:
                     )}
                   </div>
                   
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-mono uppercase opacity-50">
-                      {isConnectingGithub ? connectStep : connectError ? 'Connection failed' : 'GitHub not connected'}
-                    </p>
-                    {isConnectingGithub && (
-                      <div className="w-48 mx-auto h-1 bg-[#141414]/10 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${connectProgress}%` }}
-                          className="h-full bg-emerald-500"
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-mono uppercase opacity-50">
+                        {isConnectingGithub ? connectStep : connectError ? 'Connection failed' : `GitHub not connected via ${authMethod.toUpperCase()}`}
+                      </p>
+                      {isConnectingGithub && (
+                        <div className="w-48 mx-auto h-1 bg-[#141414]/10 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${connectProgress}%` }}
+                            className="h-full bg-emerald-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {authMethod === 'ssh' && !isConnectingGithub && (
+                      <div className="max-w-[320px] mx-auto space-y-4 text-left">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-mono uppercase opacity-50 flex items-center gap-2">
+                            <Fingerprint className="w-3 h-3" /> SSH Private Key
+                          </label>
+                          <button 
+                            onClick={handleGenerateSSHKey}
+                            disabled={isGeneratingKey}
+                            className="text-[8px] font-bold uppercase text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
+                          >
+                            {isGeneratingKey ? (
+                              <RefreshCw className="w-2 h-2 animate-spin" />
+                            ) : (
+                              <Plus className="w-2 h-2" />
+                            )}
+                            Generate Key
+                          </button>
+                          {sshKey && !sshPublicKey && (
+                            <button 
+                              onClick={handleDerivePublicKey}
+                              disabled={isGeneratingKey}
+                              className="text-[8px] font-bold uppercase text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
+                            >
+                              {isGeneratingKey ? (
+                                <RefreshCw className="w-2 h-2 animate-spin" />
+                              ) : (
+                                <Fingerprint className="w-2 h-2" />
+                              )}
+                              Derive Public Key
+                            </button>
+                          )}
+                        </div>
+                        <textarea 
+                          value={sshKey}
+                          onChange={(e) => setSshKey(e.target.value)}
+                          placeholder="-----BEGIN OPENSSH PRIVATE KEY-----..."
+                          className={`w-full h-32 p-4 rounded-2xl text-[10px] font-mono border outline-none transition-all resize-none ${
+                            theme === 'light' ? 'bg-white border-[#141414]/10 focus:border-[#141414]' : 'bg-white/5 border-white/10 focus:border-emerald-500/50'
+                          }`}
                         />
+                        
+                        {sshPublicKey && (
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-mono uppercase opacity-50 flex items-center gap-2">
+                              <ShieldCheck className="w-3 h-3" /> Public Key (Add to GitHub)
+                            </label>
+                            <p className="text-[8px] opacity-40 italic">Add this key to your GitHub account settings to authorize access.</p>
+                            <div className={`p-3 rounded-xl border flex items-center gap-2 ${
+                              theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
+                            }`}>
+                              <code className="text-[8px] font-mono opacity-70 truncate flex-1">{sshPublicKey}</code>
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(sshPublicKey);
+                                  alert('Public key copied to clipboard!');
+                                }}
+                                className="p-1 rounded hover:bg-emerald-500/20 text-emerald-500 transition-all"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
+
                     {connectError && (
                       <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 max-w-[240px] mx-auto">
                         <div className="flex items-center gap-2 text-rose-500 mb-1">
@@ -1135,9 +1279,9 @@ class UnraidMount:
                     {isConnectingGithub ? (
                       <RefreshCw className="w-3 h-3 animate-spin" />
                     ) : (
-                      <Github className="w-3 h-3" />
+                      authMethod === 'oauth' ? <Github className="w-3 h-3" /> : <Key className="w-3 h-3" />
                     )}
-                    {isConnectingGithub ? 'Connecting...' : connectError ? 'Try Again' : 'Connect Account'}
+                    {isConnectingGithub ? 'Connecting...' : connectError ? 'Try Again' : `Connect via ${authMethod.toUpperCase()}`}
                   </button>
                 </div>
               ) : (
@@ -1427,6 +1571,7 @@ const ArchitectureView = ({ theme }: { theme: 'light' | 'dark' }) => {
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [agentSubTab, setAgentSubTab] = useState<'health' | 'security' | 'api'>('health');
+  const [selectedAgentIdForLog, setSelectedAgentIdForLog] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [nodes] = useState<Node[]>(INITIAL_NODES);
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
@@ -1517,6 +1662,14 @@ export default function App() {
   const [executingActionId, setExecutingActionId] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [isGithubConnected, setIsGithubConnected] = useState(false);
+  const [authMethod, setAuthMethod] = useState<'oauth' | 'ssh'>('oauth');
+  const [sshKey, setSshKey] = useState('');
+  const [sshPublicKey, setSshPublicKey] = useState('');
+  const [isConnectingGithub, setIsConnectingGithub] = useState(false);
+  const [connectProgress, setConnectProgress] = useState(0);
+  const [connectError, setConnectError] = useState<string | null>(null);
+  const [connectStep, setConnectStep] = useState<string>('');
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
   const [githubRepos, setGithubRepos] = useState<GithubRepo[]>([
     { 
       name: 'jarvis-core', 
@@ -1638,6 +1791,41 @@ export default function App() {
     setIsTyping(false);
   };
 
+  const [legalDocs, setLegalDocs] = useState<LegalDocument[]>(INITIAL_LEGAL_DOCS);
+  const [isResearching, setIsResearching] = useState(false);
+  const [researchResults, setResearchResults] = useState<string[]>([]);
+  const [showAddLegalModal, setShowAddLegalModal] = useState(false);
+  const [newLegalDoc, setNewLegalDoc] = useState<Partial<LegalDocument>>({ type: 'Business', status: 'Draft' });
+
+  const handleResearchLegal = async () => {
+    setIsResearching(true);
+    // Simulate AI research
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    setResearchResults([
+      "Identified gap: Delaware LLC operating agreement needs update for 2026 tax law changes.",
+      "Recommendation: Consider establishing a 'Family Limited Partnership' for enhanced asset protection for daughters.",
+      "Alert: Trust funding status for 'Real Estate' assets is incomplete. 2 properties not yet deeded to trust.",
+      "Strategy: Implement a 'Crummey Trust' provision to maximize annual gift tax exclusions for daughters."
+    ]);
+    setIsResearching(false);
+  };
+
+  const handleAddLegalDoc = () => {
+    if (newLegalDoc.title) {
+      const doc: LegalDocument = {
+        id: `l${legalDocs.length + 1}`,
+        title: newLegalDoc.title,
+        type: newLegalDoc.type as any,
+        status: newLegalDoc.status as any,
+        lastUpdated: new Date().toISOString().split('T')[0],
+        summary: newLegalDoc.summary || '',
+      };
+      setLegalDocs([...legalDocs, doc]);
+      setShowAddLegalModal(false);
+      setNewLegalDoc({ type: 'Business', status: 'Draft' });
+    }
+  };
+
   const handleInitiatePipeline = () => {
     setIsUploading(true);
     setTimeout(() => {
@@ -1683,6 +1871,115 @@ export default function App() {
     }, 2000);
   };
 
+  const handleGenerateSSHKey = () => {
+    setIsGeneratingKey(true);
+    setTimeout(() => {
+      const privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
+8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X
+8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X
+8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X
+-----END OPENSSH PRIVATE KEY-----`;
+      const publicKey = `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxf jarvis@ai-studio`;
+      setSshKey(privateKey);
+      setSshPublicKey(publicKey);
+      setIsGeneratingKey(false);
+    }, 1500);
+  };
+
+  const handleDerivePublicKey = () => {
+    if (!sshKey.trim()) return;
+    setIsGeneratingKey(true);
+    setConnectStep('Deriving public key...');
+    setTimeout(() => {
+      const publicKey = `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxfxf jarvis@derived-key`;
+      setSshPublicKey(publicKey);
+      setIsGeneratingKey(false);
+      setConnectStep('');
+    }, 1200);
+  };
+
+  const handleConnectGithub = () => {
+    setIsConnectingGithub(true);
+    setConnectError(null);
+    setConnectProgress(0);
+    
+    if (authMethod === 'oauth') {
+      setConnectStep('Initializing OAuth flow...');
+      
+      const steps = [
+        { progress: 20, step: 'Redirecting to GitHub...' },
+        { progress: 40, step: 'Waiting for user authorization...' },
+        { progress: 60, step: 'Exchanging code for access token...' },
+        { progress: 80, step: 'Fetching user profile and repositories...' },
+        { progress: 100, step: 'Connection established!' }
+      ];
+
+      let currentStepIdx = 0;
+      const interval = setInterval(() => {
+        if (currentStepIdx < steps.length) {
+          const currentStep = steps[currentStepIdx];
+          if (currentStep.progress === 60 && Math.random() < 0.3) {
+            clearInterval(interval);
+            setConnectError('OAuth exchange failed: Invalid client secret or expired code.');
+            setIsConnectingGithub(false);
+            setConnectStep('Error');
+            return;
+          }
+          setConnectProgress(currentStep.progress);
+          setConnectStep(currentStep.step);
+          currentStepIdx++;
+        } else {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsGithubConnected(true);
+            setIsConnectingGithub(false);
+            setConnectProgress(0);
+            setConnectStep('');
+          }, 500);
+        }
+      }, 800);
+    } else {
+      if (!sshKey.trim()) {
+        setConnectError('Please provide a valid SSH private key.');
+        setIsConnectingGithub(false);
+        return;
+      }
+      setConnectStep('Validating SSH key...');
+      const steps = [
+        { progress: 25, step: 'Verifying key format...' },
+        { progress: 50, step: 'Establishing SSH tunnel...' },
+        { progress: 75, step: 'Authenticating with GitHub...' },
+        { progress: 100, step: 'SSH connection established!' }
+      ];
+      let currentStepIdx = 0;
+      const interval = setInterval(() => {
+        if (currentStepIdx < steps.length) {
+          const currentStep = steps[currentStepIdx];
+          if (currentStep.progress === 75 && Math.random() < 0.2) {
+            clearInterval(interval);
+            setConnectError('SSH Authentication failed: Access denied (publickey).');
+            setIsConnectingGithub(false);
+            setConnectStep('Error');
+            return;
+          }
+          setConnectProgress(currentStep.progress);
+          setConnectStep(currentStep.step);
+          currentStepIdx++;
+        } else {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsGithubConnected(true);
+            setIsConnectingGithub(false);
+            setConnectProgress(0);
+            setConnectStep('');
+          }, 500);
+        }
+      }, 800);
+    }
+  };
+
   const handleCreateAgent = () => {
     const agent: Agent = {
       ...newAgentData as Agent,
@@ -1725,6 +2022,7 @@ export default function App() {
     { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'finance', label: 'Finance', icon: Wallet },
     { id: 'cost', label: 'Cost Center', icon: DollarSign },
+    { id: 'legal', label: 'Legal Posture', icon: Shield },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -2875,39 +3173,90 @@ export default function App() {
                 key="agents-api"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="space-y-8"
+                className="grid grid-cols-12 gap-6"
               >
-                <div className={`border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white'} rounded-2xl overflow-hidden`}>
-                  <div className={`grid grid-cols-6 p-4 border-b ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-[#141414]/5'} text-[10px] font-mono uppercase opacity-50`}>
-                    <div className="col-span-1">Timestamp</div>
-                    <div className="col-span-1">Agent</div>
-                    <div className="col-span-1">Tool</div>
-                    <div className="col-span-2">Parameters</div>
-                    <div className="col-span-1 text-right">Status</div>
+                {/* Agent Selector */}
+                <div className="col-span-3 space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-4 h-4 opacity-50" />
+                    <h4 className="text-xs font-mono uppercase opacity-50">Select Agent</h4>
                   </div>
-                  <div className="divide-y divide-current/10 max-h-[600px] overflow-y-auto custom-scrollbar">
-                    {toolUsage.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed)).map((usage) => {
-                      const agent = agents.find(a => a.id === usage.agentId);
-                      return (
-                        <div key={usage.id} className="grid grid-cols-6 p-4 text-xs hover:bg-current/5 transition-colors items-center">
-                          <div className="col-span-1 font-mono opacity-50">{usage.lastUsed}</div>
-                          <div className="col-span-1 font-bold">{agent?.name || 'Unknown'}</div>
-                          <div className="col-span-1">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                              {usage.toolName}
-                            </span>
-                          </div>
-                          <div className="col-span-2 font-mono opacity-70 truncate pr-4" title={usage.parameters}>
-                            {usage.parameters}
-                          </div>
-                          <div className="col-span-1 text-right">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 uppercase">
-                              Success
-                            </span>
-                          </div>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => setSelectedAgentIdForLog(null)}
+                      className={`w-full p-3 rounded-xl border text-left transition-all ${
+                        selectedAgentIdForLog === null 
+                          ? (theme === 'dark' ? 'border-emerald-500 bg-emerald-500/10' : 'border-[#141414] bg-[#141414]/5')
+                          : (theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-[#141414]/10 hover:bg-[#141414]/5')
+                      }`}
+                    >
+                      <p className="text-xs font-bold uppercase">All Agents</p>
+                      <p className="text-[10px] opacity-50">Global Tool Usage Log</p>
+                    </button>
+                    {agents.map((agent) => (
+                      <button
+                        key={agent.id}
+                        onClick={() => setSelectedAgentIdForLog(agent.id)}
+                        className={`w-full p-3 rounded-xl border text-left transition-all ${
+                          selectedAgentIdForLog === agent.id 
+                            ? (theme === 'dark' ? 'border-emerald-500 bg-emerald-500/10' : 'border-[#141414] bg-[#141414]/5')
+                            : (theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-[#141414]/10 hover:bg-[#141414]/5')
+                        }`}
+                      >
+                        <p className="text-xs font-bold uppercase">{agent.name}</p>
+                        <p className="text-[10px] opacity-50">{agent.role}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Log Table */}
+                <div className="col-span-9 space-y-4">
+                  <div className={`border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white'} rounded-2xl overflow-hidden`}>
+                    <div className={`grid grid-cols-7 p-4 border-b ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-[#141414]/5'} text-[10px] font-mono uppercase opacity-50`}>
+                      <div className="col-span-1">Last Used</div>
+                      <div className="col-span-1">Agent</div>
+                      <div className="col-span-1">Tool Name</div>
+                      <div className="col-span-1 text-center">Invocations</div>
+                      <div className="col-span-2">Parameters</div>
+                      <div className="col-span-1 text-right">Status</div>
+                    </div>
+                    <div className="divide-y divide-current/10 max-h-[600px] overflow-y-auto custom-scrollbar">
+                      {toolUsage
+                        .filter(usage => selectedAgentIdForLog === null || usage.agentId === selectedAgentIdForLog)
+                        .sort((a, b) => b.lastUsed.localeCompare(a.lastUsed))
+                        .map((usage) => {
+                          const agent = agents.find(a => a.id === usage.agentId);
+                          return (
+                            <div key={usage.id} className="grid grid-cols-7 p-4 text-xs hover:bg-current/5 transition-colors items-center">
+                              <div className="col-span-1 font-mono opacity-50">{usage.lastUsed}</div>
+                              <div className="col-span-1 font-bold">{agent?.name || 'Unknown'}</div>
+                              <div className="col-span-1">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                                  {usage.toolName}
+                                </span>
+                              </div>
+                              <div className="col-span-1 text-center font-mono font-bold">
+                                {usage.count}
+                              </div>
+                              <div className="col-span-2 font-mono opacity-70 truncate pr-4" title={usage.parameters}>
+                                {usage.parameters}
+                              </div>
+                              <div className="col-span-1 text-right">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 uppercase">
+                                  Success
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      {toolUsage.filter(usage => selectedAgentIdForLog === null || usage.agentId === selectedAgentIdForLog).length === 0 && (
+                        <div className="p-12 text-center opacity-30">
+                          <Terminal className="w-12 h-12 mx-auto mb-4" />
+                          <p className="font-serif italic">No tool usage logs found for this agent</p>
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -3414,6 +3763,25 @@ export default function App() {
                   setIsGithubConnected={setIsGithubConnected}
                   githubRepos={githubRepos}
                   setGithubRepos={setGithubRepos}
+                  authMethod={authMethod}
+                  setAuthMethod={setAuthMethod}
+                  sshKey={sshKey}
+                  setSshKey={setSshKey}
+                  sshPublicKey={sshPublicKey}
+                  setSshPublicKey={setSshPublicKey}
+                  isConnectingGithub={isConnectingGithub}
+                  setIsConnectingGithub={setIsConnectingGithub}
+                  connectProgress={connectProgress}
+                  setConnectProgress={setConnectProgress}
+                  connectError={connectError}
+                  setConnectError={setConnectError}
+                  connectStep={connectStep}
+                  setConnectStep={setConnectStep}
+                  isGeneratingKey={isGeneratingKey}
+                  setIsGeneratingKey={setIsGeneratingKey}
+                  handleGenerateSSHKey={handleGenerateSSHKey}
+                  handleDerivePublicKey={handleDerivePublicKey}
+                  handleConnectGithub={handleConnectGithub}
                 />
               </motion.div>
             )}
@@ -4138,6 +4506,238 @@ export default function App() {
               </motion.div>
             )}
 
+            {activeTab === 'legal' && (
+              <motion.div
+                key="legal"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-8"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-serif italic text-2xl">Legal Posture & Asset Protection</h3>
+                    <p className="text-sm opacity-50 mt-1">Central repository for business, trust, and personal legal data.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setShowAddLegalModal(true)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
+                        theme === 'light' ? 'border-[#141414] hover:bg-[#141414] hover:text-[#E4E3E0]' : 'border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Entity
+                    </button>
+                    <button 
+                      onClick={handleResearchLegal}
+                      disabled={isResearching}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-medium ${
+                        isResearching 
+                          ? 'bg-amber-500/50 cursor-not-allowed' 
+                          : 'bg-emerald-500 text-[#0A0A0A] hover:bg-emerald-400'
+                      }`}
+                    >
+                      {isResearching ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
+                      {isResearching ? 'Jarvis Researching...' : 'Jarvis Research'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {legalDocs.map((doc) => (
+                        <div key={doc.id} className={`p-6 border rounded-2xl space-y-4 transition-all hover:shadow-lg ${
+                          theme === 'light' ? 'border-[#141414] bg-white/50' : 'border-white/10 bg-white/5'
+                        }`}>
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                                doc.type === 'Business' ? 'bg-blue-500/10 text-blue-500' :
+                                doc.type === 'Trust' ? 'bg-purple-500/10 text-purple-500' : 'bg-emerald-500/10 text-emerald-500'
+                              }`}>
+                                {doc.type}
+                              </span>
+                              <h4 className="font-bold text-lg leading-tight">{doc.title}</h4>
+                            </div>
+                            <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                              doc.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500' :
+                              doc.status === 'Draft' ? 'bg-amber-500/10 text-amber-500' : 'bg-rose-500/10 text-rose-500'
+                            }`}>
+                              {doc.status}
+                            </span>
+                          </div>
+                          <p className="text-xs opacity-70 line-clamp-2">{doc.summary}</p>
+                          <div className="flex items-center justify-between pt-2 border-t border-current/5">
+                            <span className="text-[9px] font-mono opacity-40 uppercase">Updated: {doc.lastUpdated}</span>
+                            <button className="text-[10px] font-bold uppercase hover:underline">View Details</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <section className={`p-6 border rounded-2xl space-y-4 ${
+                      theme === 'light' ? 'border-[#141414] bg-[#141414]/5' : 'border-white/10 bg-white/5'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <Brain className="w-5 h-5 text-emerald-500" />
+                        <h4 className="font-bold text-sm uppercase tracking-widest">Jarvis Intelligence</h4>
+                      </div>
+                      
+                      {researchResults.length > 0 ? (
+                        <div className="space-y-4">
+                          {researchResults.map((result, i) => (
+                            <motion.div 
+                              key={i}
+                              initial={{ opacity: 0, x: 10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              className={`p-3 rounded-lg border text-xs leading-relaxed ${
+                                result.startsWith('Alert') ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
+                                result.startsWith('Recommendation') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                                'bg-blue-500/10 border-blue-500/20 text-blue-500'
+                              }`}
+                            >
+                              {result}
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center space-y-3 opacity-40">
+                          <Activity className="w-8 h-8 mx-auto animate-pulse" />
+                          <p className="text-xs italic">Awaiting research trigger to identify gaps and protection strategies.</p>
+                        </div>
+                      )}
+                    </section>
+
+                    <section className={`p-6 border rounded-2xl space-y-4 ${
+                      theme === 'light' ? 'border-[#141414] bg-white' : 'border-white/10 bg-white/5'
+                    }`}>
+                      <h4 className="font-bold text-sm uppercase tracking-widest">Protection Score</h4>
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-16 h-16">
+                          <svg className="w-full h-full" viewBox="0 0 36 36">
+                            <path
+                              className="stroke-current opacity-10"
+                              strokeWidth="3"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path
+                              className="stroke-emerald-500"
+                              strokeWidth="3"
+                              strokeDasharray="65, 100"
+                              strokeLinecap="round"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-lg font-bold">65</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold">Moderate Risk</p>
+                          <p className="text-[10px] opacity-50">Daughters' future protection: 42%</p>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+
+                {/* Add Legal Modal */}
+                <AnimatePresence>
+                  {showAddLegalModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className={`w-full max-w-md p-8 rounded-3xl border shadow-2xl ${
+                          theme === 'light' ? 'bg-[#E4E3E0] border-[#141414]' : 'bg-[#0A0A0A] border-white/10'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="font-serif italic text-2xl">New Legal Entity</h3>
+                          <button onClick={() => setShowAddLegalModal(false)} className="opacity-50 hover:opacity-100">
+                            <X className="w-6 h-6" />
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-mono uppercase opacity-50">Entity Title</label>
+                            <input 
+                              type="text"
+                              value={newLegalDoc.title || ''}
+                              onChange={(e) => setNewLegalDoc({ ...newLegalDoc, title: e.target.value })}
+                              placeholder="e.g. Family Trust, LLC Name"
+                              className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all ${
+                                theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                              }`}
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-mono uppercase opacity-50">Type</label>
+                              <select 
+                                value={newLegalDoc.type}
+                                onChange={(e) => setNewLegalDoc({ ...newLegalDoc, type: e.target.value as any })}
+                                className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all ${
+                                  theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                                }`}
+                              >
+                                <option value="Business">Business</option>
+                                <option value="Trust">Trust</option>
+                                <option value="Personal">Personal</option>
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-mono uppercase opacity-50">Status</label>
+                              <select 
+                                value={newLegalDoc.status}
+                                onChange={(e) => setNewLegalDoc({ ...newLegalDoc, status: e.target.value as any })}
+                                className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all ${
+                                  theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                                }`}
+                              >
+                                <option value="Active">Active</option>
+                                <option value="Draft">Draft</option>
+                                <option value="Review Required">Review Required</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-mono uppercase opacity-50">Summary / Notes</label>
+                            <textarea 
+                              value={newLegalDoc.summary || ''}
+                              onChange={(e) => setNewLegalDoc({ ...newLegalDoc, summary: e.target.value })}
+                              rows={3}
+                              placeholder="Brief description of the entity's purpose..."
+                              className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none ${
+                                theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                              }`}
+                            />
+                          </div>
+
+                          <button 
+                            onClick={handleAddLegalDoc}
+                            className="w-full py-4 bg-emerald-500 text-[#0A0A0A] font-bold rounded-xl hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 mt-4"
+                          >
+                            Save Entity
+                          </button>
+                        </div>
+                      </motion.div>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
             {activeTab === 'settings' && (
               <motion.div
                 key="settings"
