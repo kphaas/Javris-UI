@@ -112,7 +112,7 @@ import {
   Coins
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Node, Agent, AuditLog, Document as JarvisDocument, ScheduledTask, CostEntry, Subscription, ErrorLog, User as JarvisUser, MatrixRoute, SecurityVulnerability, PortStatus, AgentProof, ToolUsage, PolicyViolation, RecommendedAction, FinancialGoal, BudgetItem, RetirementData, GithubRepo } from './types';
+import { Node, Agent, AuditLog, Document as JarvisDocument, ScheduledTask, CostEntry, Subscription, ErrorLog, User as JarvisUser, MatrixRoute, SecurityVulnerability, PortStatus, AgentProof, ToolUsage, PolicyViolation, RecommendedAction, FinancialGoal, BudgetItem, RetirementData, GithubRepo, ICloudAccount } from './types';
 import { chatWithJarvis } from './services/gemini';
 
 // --- Mock Data ---
@@ -4314,69 +4314,51 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
 
                   {/* Financial Goals */}
                   <div className="lg:col-span-2 space-y-8">
-                    {/* Short Term */}
-                    <div className="space-y-4">
+                    {/* Financial Goals Section */}
+                    <div className={`p-6 border rounded-2xl space-y-6 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'}`}>
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold tracking-tight">Short-Term Goals (3mo - 1yr)</h4>
-                        <span className="text-[10px] font-mono opacity-50 uppercase">Active Targets</span>
+                        <div className="space-y-1">
+                          <h4 className="font-bold tracking-tight">Financial Goals</h4>
+                          <p className="text-xs opacity-50">Strategic Capital Accumulation</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="text-[10px] font-mono opacity-50 uppercase px-2 py-1 rounded border border-current">Active Targets</span>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {financialGoals.filter(g => g.type === 'short').map(goal => (
-                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-sm">{goal.title}</span>
-                              <span className="text-[10px] font-mono opacity-50">{goal.deadline}</span>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-[10px] font-mono">
-                                <span>Progress</span>
-                                <span>{Math.round((goal.currentAmount / goal.targetAmount) * 100)}%</span>
-                              </div>
-                              <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
-                                <motion.div 
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${(goal.currentAmount / goal.targetAmount) * 100}%` }}
-                                  className="h-full bg-blue-500"
-                                />
-                              </div>
-                              <div className="flex items-center justify-between text-[10px] font-mono opacity-50">
-                                <span>${goal.currentAmount.toLocaleString()}</span>
-                                <span>${goal.targetAmount.toLocaleString()}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
 
-                    {/* Long Term */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold tracking-tight">Long-Term Goals (4yr - 10yr)</h4>
-                        <span className="text-[10px] font-mono opacity-50 uppercase">Future Horizons</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {financialGoals.filter(g => g.type === 'long').map(goal => (
-                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {financialGoals.map(goal => (
+                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 transition-all hover:scale-[1.02] ${
+                            theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/5' : 'bg-white/5 border-white/5'
+                          }`}>
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-sm">{goal.title}</span>
-                              <span className="text-[10px] font-mono opacity-50">{goal.deadline}</span>
+                              <div className="flex items-center gap-2">
+                                <div className={`p-1.5 rounded-lg ${theme === 'light' ? 'bg-[#141414] text-white' : 'bg-emerald-500 text-[#0A0A0A]'}`}>
+                                  {goal.type === 'short' ? <Wallet className="w-3 h-3" /> : <Landmark className="w-3 h-3" />}
+                                </div>
+                                <span className="font-bold text-sm">{goal.title}</span>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[8px] font-mono opacity-50 uppercase">Deadline</p>
+                                <p className="text-[10px] font-bold">{goal.deadline}</p>
+                              </div>
                             </div>
+
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-[10px] font-mono">
-                                <span>Progress</span>
-                                <span>{Math.round((goal.currentAmount / goal.targetAmount) * 100)}%</span>
+                                <span className="opacity-60">${goal.currentAmount.toLocaleString()}</span>
+                                <span className="font-bold">${goal.targetAmount.toLocaleString()}</span>
                               </div>
-                              <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
+                              <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/10' : 'bg-white/10'}`}>
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: `${(goal.currentAmount / goal.targetAmount) * 100}%` }}
-                                  className="h-full bg-indigo-500"
+                                  className={`h-full ${goal.type === 'short' ? 'bg-blue-500' : 'bg-indigo-500'}`}
                                 />
                               </div>
-                              <div className="flex items-center justify-between text-[10px] font-mono opacity-50">
-                                <span>${goal.currentAmount.toLocaleString()}</span>
-                                <span>${goal.targetAmount.toLocaleString()}</span>
+                              <div className="flex items-center justify-between text-[10px] font-mono">
+                                <span className="opacity-40 uppercase">Progress</span>
+                                <span className="font-bold">{Math.round((goal.currentAmount / goal.targetAmount) * 100)}%</span>
                               </div>
                             </div>
                           </div>
