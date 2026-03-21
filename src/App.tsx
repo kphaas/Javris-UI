@@ -32,6 +32,7 @@ import {
   Terminal,
   Zap,
   HardDrive,
+  Folder,
   User as UserIcon,
   Send,
   Database,
@@ -78,6 +79,12 @@ import {
   MoreHorizontal,
   Copy,
   Bell,
+  Heart,
+  Home,
+  MapPin,
+  Phone,
+  CalendarDays,
+  CheckSquare,
   Mail,
   HelpCircle,
   LogOut,
@@ -212,9 +219,9 @@ const INITIAL_NODES: Node[] = [
 ];
 
 const INITIAL_ERROR_LOGS: ErrorLog[] = [
-  { id: 'e1', timestamp: '2026-03-16 15:45:12', source: 'TTS/STT Service', message: 'Connection timeout while reaching ElevenLabs API', severity: 'high', status: 'open' },
-  { id: 'e2', timestamp: '2026-03-16 15:50:05', source: 'Postgres', message: 'High memory pressure detected on Brain node', severity: 'medium', status: 'investigating', assignedAgent: 'FinanceAnalyzer' },
-  { id: 'e3', timestamp: '2026-03-16 16:05:22', source: 'vLLM', message: 'CUDA out of memory during long context inference', severity: 'critical', status: 'open' },
+  { id: 'e1', timestamp: '2026-03-16 15:45:12', source: 'TTS/STT Service', nodeId: 'n1', message: 'Connection timeout while reaching ElevenLabs API', severity: 'high', status: 'open' },
+  { id: 'e2', timestamp: '2026-03-16 15:50:05', source: 'Postgres', nodeId: 'n1', message: 'High memory pressure detected on Brain node', severity: 'medium', status: 'investigating', assignedAgent: 'FinanceAnalyzer' },
+  { id: 'e3', timestamp: '2026-03-16 16:05:22', source: 'vLLM', nodeId: 'n2', message: 'CUDA out of memory during long context inference', severity: 'critical', status: 'open' },
 ];
 
 interface LegalDocument {
@@ -227,14 +234,17 @@ interface LegalDocument {
 }
 
 const INITIAL_LEGAL_DOCS: LegalDocument[] = [
-  { id: 'l1', title: 'Haas Tech Solutions LLC', type: 'Business', status: 'Active', lastUpdated: '2025-12-10', summary: 'Single-member LLC registered in Delaware. Operating agreement in place.' },
-  { id: 'l2', title: 'The Haas Family Revocable Trust', type: 'Trust', status: 'Active', lastUpdated: '2026-01-15', summary: 'Primary estate planning vehicle. Includes real estate and investment accounts.' },
-  { id: 'l3', title: 'Asset Protection Strategy v2', type: 'Personal', status: 'Review Required', lastUpdated: '2025-06-20', summary: 'Overview of liability insurance and offshore holding structure.' },
+  { id: 'l1', title: 'Ohana Tech WA', type: 'Business', status: 'Active', lastUpdated: '2025-12-10', summary: 'Parent entity registered in Washington. Holds intellectual property and primary operations.' },
+  { id: 'l2', title: 'Ohana Tech GA', type: 'Business', status: 'Active', lastUpdated: '2026-01-15', summary: 'Georgia subsidiary owned by Ohana Tech WA. Manages regional assets and local operations.' },
+  { id: 'l3', title: 'Ohana Revocable Trust', type: 'Trust', status: 'Active', lastUpdated: '2026-02-20', summary: 'Controlled by Ohana Tech GA. Primary estate planning vehicle for the Haas family.' },
+  { id: 'l4', title: 'Land Trust A (Primary Home)', type: 'Trust', status: 'Active', lastUpdated: '2026-03-01', summary: 'Holds title to primary residence. Owned by Ohana Revocable Trust.' },
+  { id: 'l5', title: 'Land Trust B (Investment)', type: 'Trust', status: 'Active', lastUpdated: '2026-03-05', summary: 'Holds title to investment property. Owned by Ohana Revocable Trust.' },
 ];
 
 const INITIAL_USERS: JarvisUser[] = [
-  { id: 'u1', name: 'Ken Haas', email: 'kennethphaas@gmail.com', role: 'admin', status: 'active', lastLogin: '2026-03-16 16:20' },
-  { id: 'u2', name: 'Ryleigh Haas', email: 'ryleigh@example.com', role: 'user', status: 'active', lastLogin: '2026-03-16 15:30' },
+  { id: 'u1', name: 'Ken Haas', email: 'kennethphaas@gmail.com', role: 'admin', accessType: 'adult', status: 'active', lastLogin: '2026-03-16 16:20' },
+  { id: 'u2', name: 'Ryleigh Haas', email: 'ryleigh@example.com', role: 'user', accessType: 'kid', status: 'active', lastLogin: '2026-03-16 15:30' },
+  { id: 'u3', name: 'Sloane Haas', email: 'sloane@example.com', role: 'user', accessType: 'kid', status: 'active', lastLogin: '2026-03-21 12:00' },
 ];
 
 const INITIAL_MATRIX_ROUTES: MatrixRoute[] = [
@@ -489,8 +499,8 @@ const MeshView = ({ nodes, theme }: { nodes: Node[], theme: 'light' | 'dark' }) 
         </div>
       </div>
 
-      <div className={`relative h-[600px] rounded-3xl border overflow-hidden ${
-        theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-[#0A0A0A] border-white/10'
+      <div className={`relative h-[400px] rounded-3xl border overflow-hidden ${
+        theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-[#0A0A0A] border-white/10'
       }`}>
         {/* Grid Background */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ 
@@ -502,16 +512,16 @@ const MeshView = ({ nodes, theme }: { nodes: Node[], theme: 'light' | 'dark' }) 
         <svg className="absolute inset-0 w-full h-full pointer-events-none">
           <defs>
             <linearGradient id="meshGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.6" />
             </linearGradient>
           </defs>
           {nodes.map((node, i) => (
             nodes.slice(i + 1).map((peer, j) => {
-              const x1 = 15 + (i * 20) % 70;
-              const y1 = 20 + (i * 15) % 60;
-              const x2 = 15 + ((i + j + 1) * 20) % 70;
-              const y2 = 20 + ((i + j + 1) * 15) % 60;
+              const x1 = 20 + (i * 15) % 60;
+              const y1 = 25 + (i * 12) % 50;
+              const x2 = 20 + ((i + j + 1) * 15) % 60;
+              const y2 = 25 + ((i + j + 1) * 12) % 50;
               return (
                 <g key={`${node.id}-${peer.id}`}>
                   <motion.line
@@ -520,13 +530,13 @@ const MeshView = ({ nodes, theme }: { nodes: Node[], theme: 'light' | 'dark' }) 
                     x2={`${x2}%`}
                     y2={`${y2}%`}
                     stroke="url(#meshGradient)"
-                    strokeWidth="1"
+                    strokeWidth="1.5"
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
                     transition={{ duration: 2, delay: i * 0.2 }}
                   />
                   <motion.circle
-                    r="2"
+                    r="2.5"
                     fill="#10b981"
                     animate={{ 
                       cx: [`${x1}%`, `${x2}%`],
@@ -534,7 +544,7 @@ const MeshView = ({ nodes, theme }: { nodes: Node[], theme: 'light' | 'dark' }) 
                       opacity: [0, 1, 0]
                     }}
                     transition={{ 
-                      duration: 3, 
+                      duration: 2.5, 
                       repeat: Infinity, 
                       delay: (i + j) * 0.5,
                       ease: "linear"
@@ -550,8 +560,8 @@ const MeshView = ({ nodes, theme }: { nodes: Node[], theme: 'light' | 'dark' }) 
         <div className="absolute inset-0">
           {nodes.map((node, i) => {
             const NodeIcon = getNodeIcon(node.type);
-            const x = 15 + (i * 20) % 70;
-            const y = 20 + (i * 15) % 60;
+            const x = 20 + (i * 15) % 60;
+            const y = 25 + (i * 12) % 50;
             return (
               <motion.div
                 key={node.id}
@@ -561,21 +571,21 @@ const MeshView = ({ nodes, theme }: { nodes: Node[], theme: 'light' | 'dark' }) 
                 transition={{ type: 'spring', damping: 12, delay: i * 0.1 }}
                 className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
               >
-                <div className={`relative p-4 rounded-2xl border transition-all group-hover:scale-110 group-hover:shadow-2xl ${
+                <div className={`relative p-3 rounded-xl border transition-all group-hover:scale-110 group-hover:shadow-2xl ${
                   theme === 'light' 
-                    ? 'bg-white border-[#141414] shadow-lg' 
+                    ? 'bg-white/50 border-[#141414] shadow-lg' 
                     : 'bg-[#141414] border-white/20 shadow-emerald-500/10'
                 }`}>
-                  <div className={`p-2 rounded-lg mb-2 ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-emerald-500/10'}`}>
-                    <NodeIcon className={`w-5 h-5 ${theme === 'light' ? 'text-[#141414]' : 'text-emerald-500'}`} />
+                  <div className={`p-1.5 rounded-lg mb-1.5 ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-emerald-500/10'}`}>
+                    <NodeIcon className={`w-4 h-4 ${theme === 'light' ? 'text-[#141414]' : 'text-emerald-500'}`} />
                   </div>
                   <div className="text-center">
-                    <h5 className="text-[10px] font-bold tracking-tighter whitespace-nowrap">{node.name}</h5>
-                    <p className="text-[8px] font-mono opacity-50">{node.ip}</p>
+                    <h5 className="text-[9px] font-bold tracking-tighter whitespace-nowrap">{node.name}</h5>
+                    <p className="text-[7px] font-mono opacity-50">{node.ip}</p>
                   </div>
                   
                   {/* Status Indicator */}
-                  <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 ${
+                  <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 ${
                     theme === 'light' ? 'border-white' : 'border-[#141414]'
                   } ${node.status === 'online' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                 </div>
@@ -594,7 +604,7 @@ const MeshView = ({ nodes, theme }: { nodes: Node[], theme: 'light' | 'dark' }) 
           { label: 'Relay Nodes', value: '2', icon: Globe },
         ].map((stat, i) => (
           <div key={i} className={`p-4 border rounded-xl flex items-center gap-4 ${
-            theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+            theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
           }`}>
             <div className={`p-2 rounded-lg ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
               <stat.icon className="w-4 h-4 opacity-50" />
@@ -933,7 +943,7 @@ class UnraidMount:
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(100vh-160px)]">
       <div className={`lg:col-span-1 border rounded-2xl overflow-hidden flex flex-col ${
-        theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+        theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
       }`}>
         <div className={`p-4 border-b text-[10px] font-mono uppercase opacity-50 flex items-center justify-between ${
           theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'
@@ -1005,7 +1015,7 @@ class UnraidMount:
                 <div key={file.name} className="relative group">
                   {editingFileName === file.name ? (
                     <div className={`flex items-center gap-2 p-2 rounded-xl border ${
-                      theme === 'light' ? 'bg-white border-[#141414]' : 'bg-white/10 border-emerald-500'
+                      theme === 'light' ? 'bg-white/50 border-[#141414]' : 'bg-white/10 border-emerald-500'
                     }`}>
                       <FileCode className="w-4 h-4 opacity-50 flex-shrink-0" />
                       <input
@@ -1087,7 +1097,7 @@ class UnraidMount:
                         onChange={(e) => setSshKey(e.target.value)}
                         placeholder="Paste SSH Private Key..."
                         className={`w-full h-20 p-2 rounded-xl text-[9px] font-mono border outline-none transition-all resize-none ${
-                          theme === 'light' ? 'bg-white border-[#141414]/10 focus:border-[#141414]' : 'bg-white/5 border-white/10 focus:border-emerald-500/50'
+                          theme === 'light' ? 'bg-white/50 border-[#141414]/10 focus:border-[#141414]' : 'bg-white/5 border-white/10 focus:border-emerald-500/50'
                         }`}
                       />
                     </div>
@@ -1229,7 +1239,7 @@ class UnraidMount:
                           onChange={(e) => setSshKey(e.target.value)}
                           placeholder="-----BEGIN OPENSSH PRIVATE KEY-----..."
                           className={`w-full h-32 p-4 rounded-2xl text-[10px] font-mono border outline-none transition-all resize-none ${
-                            theme === 'light' ? 'bg-white border-[#141414]/10 focus:border-[#141414]' : 'bg-white/5 border-white/10 focus:border-emerald-500/50'
+                            theme === 'light' ? 'bg-white/50 border-[#141414]/10 focus:border-[#141414]' : 'bg-white/5 border-white/10 focus:border-emerald-500/50'
                           }`}
                         />
                         
@@ -1370,7 +1380,7 @@ class UnraidMount:
                           setSelectedGithubFile(repo.files[0].name);
                         }}
                         className={`w-full flex flex-col p-3 rounded-xl border transition-all text-left ${
-                          theme === 'light' ? 'bg-white border-[#141414]/10 hover:border-[#141414]' : 'bg-white/5 border-white/10 hover:border-emerald-500/50'
+                          theme === 'light' ? 'bg-white/50 border-[#141414]/10 hover:border-[#141414]' : 'bg-white/5 border-white/10 hover:border-emerald-500/50'
                         }`}
                       >
                         <div className="flex items-center justify-between w-full mb-1">
@@ -1431,87 +1441,168 @@ class UnraidMount:
 };
 
 const ArchitectureView = ({ theme }: { theme: 'light' | 'dark' }) => {
+  const [archTab, setArchTab] = useState<'topology' | 'files'>('topology');
+  
   const roadmap = [
-    { task: 'Brain Core (Gemini 3 Integration)', status: 'done' },
-    { task: 'Tailscale Mesh Topology', status: 'done' },
-    { task: 'Multi-Agent Orchestrator', status: 'done' },
-    { task: 'Unraid Storage Connector', status: 'done' },
-    { task: 'mTLS Security Layer', status: 'process' },
-    { task: 'Cross-Node GPU Sharing', status: 'process' },
-    { task: 'Autonomous Self-Healing', status: 'left' },
-    { task: 'External API Gateway', status: 'left' },
+    { task: 'Brain Core (Gemini 3 Integration)', status: 'done', doc: 'T20_BRAIN_SPEC.md' },
+    { task: 'Tailscale Mesh Topology', status: 'done', doc: 'T10_NETWORK_MAP.md' },
+    { task: 'Multi-Agent Orchestrator', status: 'done', doc: 'T30_AGENT_ORCH.md' },
+    { task: 'Unraid Storage Connector', status: 'done', doc: 'T10_STORAGE_V3.md' },
+    { task: 'mTLS Security Layer', status: 'process', doc: 'T40_SECURITY_HARDENING.md' },
+    { task: 'Cross-Node GPU Sharing', status: 'process', doc: 'T30_GPU_CLUSTER.md' },
+    { task: 'Autonomous Self-Healing', status: 'left', doc: 'T40_HEAL_LOGIC.md' },
+    { task: 'External API Gateway', status: 'left', doc: 'T20_GATEWAY_API.md' },
+  ];
+
+  const fileStructure = [
+    { name: 'src/main.tsx', type: 'entry', size: '1.2kb' },
+    { name: 'src/App.tsx', type: 'core', size: '312kb' },
+    { name: 'src/services/gemini.ts', type: 'service', size: '4.5kb' },
+    { name: 'src/components/', type: 'dir', size: '-' },
+    { name: 'server.ts', type: 'backend', size: '8.1kb' },
   ];
 
   return (
     <div className="space-y-8">
-      <div className={`p-8 border rounded-3xl relative overflow-hidden ${
-        theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+      <div className={`p-6 border rounded-3xl relative overflow-hidden ${
+        theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
       }`}>
-        <h3 className="font-serif italic text-2xl mb-8">System Architecture v3.0</h3>
-        
-        {/* Architecture Diagram (SVG/CSS) */}
-        <div className="relative h-[400px] flex items-center justify-center">
-          <div className="absolute inset-0 opacity-10 pointer-events-none">
-            <div className="w-full h-full border-2 border-dashed border-current rounded-full animate-[spin_60s_linear_infinite]" />
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="font-serif italic text-2xl">System Architecture v3.0</h3>
+            <p className="text-[10px] font-mono opacity-50 uppercase mt-1">Haas - Private AI Infrastructure</p>
           </div>
-          
-          <div className="grid grid-cols-3 gap-12 relative z-10">
-            {/* Left Column: Input/Storage */}
-            <div className="space-y-12 flex flex-col justify-center">
-              <div className={`p-4 border rounded-xl text-center space-y-2 ${theme === 'light' ? 'bg-white border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
-                <Database className="w-6 h-6 mx-auto text-emerald-500" />
-                <p className="text-[10px] font-mono uppercase font-bold">Unraid Storage</p>
-                <div className="text-[8px] opacity-50">MOUNTED /mnt/user</div>
-              </div>
-              <div className={`p-4 border rounded-xl text-center space-y-2 ${theme === 'light' ? 'bg-white border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
-                <FileText className="w-6 h-6 mx-auto text-emerald-500" />
-                <p className="text-[10px] font-mono uppercase font-bold">Ingestion Pipeline</p>
-                <div className="text-[8px] opacity-50">T10 - T40 CLASSIFICATION</div>
-              </div>
-            </div>
-
-            {/* Center Column: Core */}
-            <div className="flex flex-col items-center justify-center relative">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-emerald-500/20 rounded-full animate-pulse" />
-              <div className={`w-32 h-32 rounded-full border-4 flex flex-col items-center justify-center space-y-2 relative z-10 ${
-                theme === 'light' ? 'bg-[#141414] text-[#E4E3E0] border-emerald-500' : 'bg-emerald-500 text-[#0A0A0A] border-white'
-              }`}>
-                <Brain className="w-10 h-10" />
-                <p className="text-xs font-bold uppercase tracking-widest">Brain</p>
-                <p className="text-[8px] opacity-70">GEMINI 3.1</p>
-              </div>
-              
-              {/* Connection Lines (Visual) */}
-              <div className="absolute top-1/2 left-0 w-full h-[1px] bg-emerald-500/20 -translate-y-1/2 -z-10" />
-              <div className="absolute top-0 left-1/2 w-[1px] h-full bg-emerald-500/20 -translate-x-1/2 -z-10" />
-            </div>
-
-            {/* Right Column: Nodes/Agents */}
-            <div className="space-y-12 flex flex-col justify-center">
-              <div className={`p-4 border rounded-xl text-center space-y-2 ${theme === 'light' ? 'bg-white border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
-                <Network className="w-6 h-6 mx-auto text-emerald-500" />
-                <p className="text-[10px] font-mono uppercase font-bold">Tailscale Mesh</p>
-                <div className="text-[8px] opacity-50">mTLS ENCRYPTED</div>
-              </div>
-              <div className={`p-4 border rounded-xl text-center space-y-2 ${theme === 'light' ? 'bg-white border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
-                <Users className="w-6 h-6 mx-auto text-emerald-500" />
-                <p className="text-[10px] font-mono uppercase font-bold">Agent Fleet</p>
-                <div className="text-[8px] opacity-50">AUTONOMOUS WORKERS</div>
-              </div>
-            </div>
+          <div className="flex bg-current/5 p-1 rounded-lg">
+            <button 
+              onClick={() => setArchTab('topology')}
+              className={`px-3 py-1.5 rounded-md text-[10px] font-mono uppercase transition-all ${
+                archTab === 'topology' 
+                  ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                  : 'opacity-50 hover:opacity-100'
+              }`}
+            >
+              Topology
+            </button>
+            <button 
+              onClick={() => setArchTab('files')}
+              className={`px-3 py-1.5 rounded-md text-[10px] font-mono uppercase transition-all ${
+                archTab === 'files' 
+                  ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]')
+                  : 'opacity-50 hover:opacity-100'
+              }`}
+            >
+              File Structure
+            </button>
           </div>
         </div>
+        
+        {archTab === 'topology' ? (
+          <div className="relative h-[300px] flex items-center justify-center">
+            <div className="absolute inset-0 opacity-5 pointer-events-none">
+              <div className="w-full h-full border border-dashed border-current rounded-full animate-[spin_60s_linear_infinite]" />
+            </div>
+            
+            <div className="grid grid-cols-3 gap-8 relative z-10 scale-90">
+              {/* Left Column: Input/Storage */}
+              <div className="space-y-8 flex flex-col justify-center">
+                <div className={`p-3 border rounded-xl text-center space-y-1 ${theme === 'light' ? 'bg-white/50 border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
+                  <Database className="w-5 h-5 mx-auto text-emerald-500" />
+                  <p className="text-[9px] font-mono uppercase font-bold">Unraid Storage</p>
+                  <div className="text-[7px] opacity-50">MOUNTED /mnt/user</div>
+                </div>
+                <div className={`p-3 border rounded-xl text-center space-y-1 ${theme === 'light' ? 'bg-white/50 border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
+                  <FileText className="w-5 h-5 mx-auto text-emerald-500" />
+                  <p className="text-[9px] font-mono uppercase font-bold">Ingestion Pipeline</p>
+                  <div className="text-[7px] opacity-50">T10 - T40 CLASSIFICATION</div>
+                </div>
+              </div>
+
+              {/* Center Column: Core */}
+              <div className="flex flex-col items-center justify-center relative">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] border border-emerald-500/20 rounded-full animate-pulse" />
+                <div className={`w-24 h-24 rounded-full border-2 flex flex-col items-center justify-center space-y-1 relative z-10 ${
+                  theme === 'light' ? 'bg-[#141414] text-[#E4E3E0] border-emerald-500' : 'bg-emerald-500 text-[#0A0A0A] border-white'
+                }`}>
+                  <Brain className="w-8 h-8" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest">Brain</p>
+                  <p className="text-[7px] opacity-70">GEMINI 3.1</p>
+                </div>
+                
+                <div className="absolute top-1/2 left-0 w-full h-[1px] bg-emerald-500/20 -translate-y-1/2 -z-10" />
+                <div className="absolute top-0 left-1/2 w-[1px] h-full bg-emerald-500/20 -translate-x-1/2 -z-10" />
+              </div>
+
+              {/* Right Column: Nodes/Agents */}
+              <div className="space-y-8 flex flex-col justify-center">
+                <div className={`p-3 border rounded-xl text-center space-y-1 ${theme === 'light' ? 'bg-white/50 border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
+                  <Network className="w-5 h-5 mx-auto text-emerald-500" />
+                  <p className="text-[9px] font-mono uppercase font-bold">Tailscale Mesh</p>
+                  <div className="text-[7px] opacity-50">mTLS ENCRYPTED</div>
+                </div>
+                <div className={`p-3 border rounded-xl text-center space-y-1 ${theme === 'light' ? 'bg-white/50 border-[#141414]' : 'bg-black border-emerald-500/50'}`}>
+                  <Users className="w-5 h-5 mx-auto text-emerald-500" />
+                  <p className="text-[9px] font-mono uppercase font-bold">Agent Fleet</p>
+                  <div className="text-[7px] opacity-50">AUTONOMOUS WORKERS</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="h-[300px] overflow-y-auto custom-scrollbar pr-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-mono uppercase opacity-50">Project Structure</h4>
+                <div className="space-y-2">
+                  {fileStructure.map((file, i) => (
+                    <div key={i} className={`p-3 rounded-xl border flex items-center justify-between ${
+                      theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        {file.type === 'dir' ? <Folder className="w-4 h-4 opacity-50" /> : <FileCode className="w-4 h-4 opacity-50" />}
+                        <span className="text-xs font-mono">{file.name}</span>
+                      </div>
+                      <span className="text-[8px] font-mono opacity-30">{file.size}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-mono uppercase opacity-50">Active Services</h4>
+                <div className="space-y-2">
+                  {[
+                    { name: 'Gemini API Proxy', status: 'online', port: '3001' },
+                    { name: 'Tailscale DERP', status: 'online', port: '443' },
+                    { name: 'Unraid NFS', status: 'online', port: '2049' },
+                    { name: 'mTLS Auth', status: 'online', port: '8443' },
+                  ].map((svc, i) => (
+                    <div key={i} className={`p-3 rounded-xl border flex items-center justify-between ${
+                      theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-xs font-mono">{svc.name}</span>
+                      </div>
+                      <span className="text-[8px] font-mono opacity-30">PORT {svc.port}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className={`p-6 border rounded-2xl ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+        <div className={`p-6 border rounded-2xl ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
           <h4 className="font-bold tracking-tight mb-6 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             Development Roadmap
           </h4>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {roadmap.map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+              <div key={i} className={`flex items-center justify-between p-3 rounded-xl border transition-all hover:scale-[1.02] ${
+                theme === 'light' ? 'bg-white/50 border-[#141414]/5' : 'bg-white/5 border-white/5'
+              }`}>
                 <div className="flex items-center gap-3">
                   {item.status === 'done' ? (
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -1520,7 +1611,10 @@ const ArchitectureView = ({ theme }: { theme: 'light' | 'dark' }) => {
                   ) : (
                     <div className="w-4 h-4 rounded-full border-2 border-white/20" />
                   )}
-                  <span className={`text-sm ${item.status === 'done' ? 'opacity-50 line-through' : ''}`}>{item.task}</span>
+                  <div className="flex flex-col">
+                    <span className={`text-sm ${item.status === 'done' ? 'opacity-50 line-through' : ''}`}>{item.task}</span>
+                    <span className="text-[8px] font-mono opacity-30 uppercase">Ref: {item.doc}</span>
+                  </div>
                 </div>
                 <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded ${
                   item.status === 'done' ? 'bg-emerald-500/10 text-emerald-500' :
@@ -1533,7 +1627,7 @@ const ArchitectureView = ({ theme }: { theme: 'light' | 'dark' }) => {
           </div>
         </div>
 
-        <div className={`p-6 border rounded-2xl ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+        <div className={`p-6 border rounded-2xl ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
           <h4 className="font-bold tracking-tight mb-6 flex items-center gap-2">
             <Info className="w-4 h-4 text-blue-500" />
             System Status Summary
@@ -1572,7 +1666,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [agentSubTab, setAgentSubTab] = useState<'health' | 'security' | 'api'>('health');
   const [selectedAgentIdForLog, setSelectedAgentIdForLog] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('jarvis-theme');
+    return (saved as 'light' | 'dark') || 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('jarvis-theme', theme);
+  }, [theme]);
   const [nodes] = useState<Node[]>(INITIAL_NODES);
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
   const [agentProofs, setAgentProofs] = useState<AgentProof[]>(INITIAL_AGENT_PROOFS);
@@ -1599,6 +1700,18 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isICloudSyncing, setIsICloudSyncing] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUser, setNewUser] = useState<Partial<JarvisUser>>({
+    name: '',
+    email: '',
+    role: 'user',
+    accessType: 'adult',
+    status: 'active'
+  });
+  const [iCloudAccounts, setICloudAccounts] = useState<ICloudAccount[]>([
+    { id: 'ic1', email: 'kennethphaas@me.com', status: 'synced', lastSync: '2026-03-21 10:00', photoCount: 45201 },
+    { id: 'ic2', email: 'ryleigh@me.com', status: 'synced', lastSync: '2026-03-21 11:30', photoCount: 12450 },
+  ]);
   const [isAutoSortEnabled, setIsAutoSortEnabled] = useState(true);
   const [lastICloudSync, setLastICloudSync] = useState<string | null>('2026-03-19 14:22');
   const [isVerifyingProofs, setIsVerifyingProofs] = useState(false);
@@ -1734,6 +1847,8 @@ export default function App() {
     classification: 10,
     model: 'Llama 3 (Local)',
     defaultTaskPriority: 'medium',
+    persona: 'Professional',
+    memoryLimit: 2048,
   });
 
   // Chat State
@@ -2005,6 +2120,8 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
       classification: 10,
       model: 'Llama 3 (Local)',
       defaultTaskPriority: 'medium',
+      persona: 'Professional',
+      memoryLimit: 2048,
     });
   };
 
@@ -2013,6 +2130,8 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
     { id: 'mesh', label: 'Mesh', icon: Network },
     { id: 'chat', label: 'Brain', icon: MessageSquare },
     { id: 'agents', label: 'Agents', icon: Users },
+    { id: 'family', label: 'Family', icon: Heart },
+    { id: 'home', label: 'Home Automation', icon: Home },
     { id: 'code', label: 'Jarvis Code', icon: FileCode },
     { id: 'architecture', label: 'Architecture', icon: Box },
     { id: 'security', label: 'Security', icon: ShieldAlert },
@@ -2039,11 +2158,33 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
         <div className={`p-6 border-b transition-colors duration-300 ${
           theme === 'light' ? 'border-[#141414]' : 'border-white/10'
         }`}>
-          <h1 className="text-2xl font-bold tracking-tighter flex items-center gap-2">
-            <Zap className={`w-6 h-6 fill-current ${theme === 'light' ? 'text-[#141414]' : 'text-emerald-500'}`} />
-            JARVIS
-          </h1>
-          <p className="text-[10px] font-mono opacity-50 uppercase mt-1">Private AI Infrastructure v3</p>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold tracking-tighter flex items-center gap-2">
+              <Zap className={`w-6 h-6 fill-current ${theme === 'light' ? 'text-[#141414]' : 'text-emerald-500'}`} />
+              JARVIS
+            </h1>
+            <button 
+              onClick={toggleTheme}
+              className={`p-2 rounded-lg border transition-all ${
+                theme === 'light' 
+                  ? 'border-[#141414]/10 hover:bg-[#141414]/5' 
+                  : 'border-white/10 hover:bg-white/5'
+              }`}
+            >
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]'
+            }`}>
+              <UserIcon className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] font-mono font-bold uppercase leading-none">Kenneth Haas</p>
+              <p className="text-[10px] font-mono opacity-50 uppercase mt-1">Haas - Private AI</p>
+            </div>
+          </div>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-1">
@@ -2068,40 +2209,10 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
           ))}
         </nav>
 
-        <div className={`p-6 border-t space-y-4 transition-colors duration-300 ${
-          theme === 'light' ? 'border-[#141414]' : 'border-white/10'
-        }`}>
-          <button 
-            onClick={toggleTheme}
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-lg border transition-all ${
-              theme === 'light' 
-                ? 'border-[#141414]/10 hover:bg-[#141414]/5' 
-                : 'border-white/10 hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              <span className="text-sm font-medium">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-            </div>
-            <div className={`w-8 h-4 rounded-full relative transition-colors ${
-              theme === 'light' ? 'bg-[#141414]/20' : 'bg-emerald-500/40'
-            }`}>
-              <motion.div 
-                animate={{ x: theme === 'light' ? 2 : 18 }}
-                className={`w-3 h-3 rounded-full absolute top-0.5 ${
-                  theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500'
-                }`}
-              />
-            </div>
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#141414] flex items-center justify-center text-[#E4E3E0]">
-              <UserIcon className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs font-bold">Ken Haas</p>
-              <p className="text-[10px] font-mono opacity-50 uppercase">Admin • Phase 6b</p>
-            </div>
+        <div className="p-6 border-t border-current/5">
+          <div className="flex items-center justify-between text-[8px] font-mono uppercase opacity-30">
+            <span>System Status</span>
+            <span className="text-emerald-500">All Nodes Online</span>
           </div>
         </div>
       </aside>
@@ -2340,9 +2451,13 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     ]
                   } : {}}
                   transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="flex-1 border border-[#141414] rounded-2xl bg-white/50 flex flex-col overflow-hidden shadow-2xl relative"
+                  className={`flex-1 border rounded-2xl flex flex-col overflow-hidden shadow-2xl relative transition-colors duration-300 ${
+                    theme === 'light' ? 'border-[#141414] bg-white/50' : 'border-white/10 bg-white/5'
+                  }`}
                 >
-                  <div className="p-4 border-b border-[#141414] bg-[#141414]/5 flex items-center justify-between">
+                  <div className={`p-4 border-b flex items-center justify-between transition-colors duration-300 ${
+                    theme === 'light' ? 'border-[#141414] bg-[#141414]/5' : 'border-white/10 bg-white/5'
+                  }`}>
                     <div className="flex items-center gap-3 relative">
                       <div className="relative">
                         {isTyping && (
@@ -2407,15 +2522,17 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                               ease: "linear",
                               delay: Math.random() * 5
                             }}
-                            className="absolute w-[1px] h-20 bg-[#141414]"
+                            className={`absolute w-[1px] h-20 ${theme === 'light' ? 'bg-[#141414]' : 'bg-white'}`}
                           />
                         ))}
                       </div>
                     )}
                     {messages.map((msg, idx) => (
                       <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <div className={`w-8 h-8 rounded border border-[#141414] flex items-center justify-center ${
-                          msg.role === 'model' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-white text-[#141414]'
+                        <div className={`w-8 h-8 rounded border flex items-center justify-center transition-colors duration-300 ${
+                          msg.role === 'model' 
+                            ? (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' : 'bg-emerald-500 text-[#0A0A0A] border-emerald-500')
+                            : (theme === 'light' ? 'bg-white text-[#141414] border-[#141414]' : 'bg-white/10 text-[#E4E3E0] border-white/20')
                         }`}>
                           {msg.role === 'model' ? (
                             <motion.div
@@ -2434,8 +2551,10 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                             {msg.role === 'model' ? 'JARVIS' : 'KEN'}
                             {msg.mode === 'overnight' && <Moon className="w-3 h-3 text-indigo-500" />}
                           </div>
-                          <div className={`p-4 border border-[#141414] rounded-xl inline-block max-w-2xl text-left ${
-                            msg.role === 'model' ? 'bg-[#141414]/5' : 'bg-[#141414] text-[#E4E3E0]'
+                          <div className={`p-4 border rounded-xl inline-block max-w-2xl text-left transition-colors duration-300 ${
+                            msg.role === 'model' 
+                              ? (theme === 'light' ? 'bg-[#141414]/5 border-[#141414]' : 'bg-white/5 border-white/10')
+                              : (theme === 'light' ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' : 'bg-emerald-500 text-[#0A0A0A] border-emerald-500')
                           }`}>
                             {msg.text}
                           </div>
@@ -2444,7 +2563,9 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     ))}
                     {isTyping && (
                       <div className="flex gap-4">
-                        <div className="w-8 h-8 rounded border border-[#141414] flex items-center justify-center bg-[#141414] text-[#E4E3E0]">
+                        <div className={`w-8 h-8 rounded border flex items-center justify-center transition-colors duration-300 ${
+                          theme === 'light' ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' : 'bg-emerald-500 text-[#0A0A0A] border-emerald-500'
+                        }`}>
                           <motion.div
                             animate={{ 
                               color: ['#E4E3E0', '#f59e0b', '#E4E3E0'],
@@ -2458,9 +2579,9 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                         <div className="flex-1 space-y-2">
                           <p className="opacity-50 text-[10px] uppercase">JARVIS</p>
                           <div className="flex gap-1 p-4">
-                            <div className="w-1.5 h-1.5 bg-[#141414] rounded-full animate-bounce" />
-                            <div className="w-1.5 h-1.5 bg-[#141414] rounded-full animate-bounce [animation-delay:0.2s]" />
-                            <div className="w-1.5 h-1.5 bg-[#141414] rounded-full animate-bounce [animation-delay:0.4s]" />
+                            <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500'}`} />
+                            <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0.2s] ${theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500'}`} />
+                            <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0.4s] ${theme === 'light' ? 'bg-[#141414]' : 'bg-emerald-500'}`} />
                           </div>
                         </div>
                       </div>
@@ -2468,7 +2589,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     <div ref={chatEndRef} />
                   </div>
 
-                  <div className={`p-6 border-t ${theme === 'dark' ? 'border-white/10 bg-[#141414]' : 'border-[#141414] bg-white'} space-y-4`}>
+                  <div className={`p-6 border-t ${theme === 'dark' ? 'border-white/10 bg-[#141414]' : 'border-[#141414] bg-white/50'} space-y-4`}>
                     {isTyping && (
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }}
@@ -2529,7 +2650,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                               }
                             }}
                             className={`w-full py-1.5 px-2 rounded-lg border text-[9px] font-mono uppercase transition-all focus:outline-none ${
-                              theme === 'dark' ? 'bg-[#141414] border-white/10 text-[#E4E3E0]' : 'bg-white border-[#141414]/10 text-[#141414]'
+                              theme === 'dark' ? 'bg-[#141414] border-white/10 text-[#E4E3E0]' : 'bg-white/50 border-[#141414]/10 text-[#141414]'
                             }`}
                           >
                             <option value="">Auto-Select</option>
@@ -2570,7 +2691,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                                 className={`flex-1 py-1.5 rounded-lg border text-[9px] font-mono uppercase transition-all ${
                                   retryStrategy === s 
                                     ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                                    : theme === 'dark' ? 'border-white/10 bg-white/5 opacity-50 hover:opacity-100' : 'border-[#141414]/10 bg-white opacity-50 hover:opacity-100'
+                                    : theme === 'dark' ? 'border-white/10 bg-white/5 opacity-50 hover:opacity-100' : 'border-[#141414]/10 bg-white/50 opacity-50 hover:opacity-100'
                                 }`}
                               >
                                 {s}
@@ -2590,7 +2711,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder={chatMode === 'realtime' ? "Execute command or query Brain..." : "Describe the overnight task for JARVIS..."}
-                        className={`w-full ${theme === 'dark' ? 'bg-white/5 border-white/20 focus:ring-white/10' : 'bg-[#141414]/5 border-[#141414] focus:ring-[#141414]/10'} border rounded-xl px-6 py-4 focus:outline-none focus:ring-2 font-mono text-sm`}
+                        className={`w-full ${theme === 'dark' ? 'bg-white/5 border-white/20 focus:ring-white/10' : 'bg-[#141414]/5 border-[#141414] focus:ring-[#141414]/10'} border rounded-xl px-6 py-4 focus:outline-none focus:ring-2 font-mono text-sm transition-colors duration-300`}
                       />
                       <button 
                         type="submit"
@@ -2613,7 +2734,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                   </div>
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {scheduledTasks.map(task => (
-                      <div key={task.id} className={`p-3 border ${theme === 'dark' ? 'border-white/10 bg-white/5 hover:border-white/30' : 'border-[#141414]/10 bg-white hover:border-[#141414]'} rounded-xl space-y-2 group transition-all`}>
+                      <div key={task.id} className={`p-3 border ${theme === 'dark' ? 'border-white/10 bg-white/5 hover:border-white/30' : 'border-[#141414]/10 bg-white/50 hover:border-[#141414]'} rounded-xl space-y-2 group transition-all`}>
                         <div className="flex justify-between items-start">
                           <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${
                             task.status === 'running' ? 'bg-indigo-500 text-white animate-pulse' : 
@@ -2672,7 +2793,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     <p className="text-xs opacity-50 font-mono uppercase mt-1">Governed by Central Policy Gateway</p>
                   </div>
                   <div className="flex gap-4">
-                    <div className={`px-4 py-2 border rounded-xl ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414]/10 bg-white'} flex items-center gap-6`}>
+                    <div className={`px-4 py-2 border rounded-xl ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414]/10 bg-white/50'} flex items-center gap-6`}>
                       <div className="text-center">
                         <p className="text-[8px] font-mono uppercase opacity-50">Avg CPU</p>
                         <p className="text-sm font-bold">35.6%</p>
@@ -2849,6 +2970,20 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                               agent.defaultTaskPriority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
                             }`} />
                             <span className="text-[8px] font-mono font-bold uppercase opacity-50">DEF PRIO: {agent.defaultTaskPriority}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 relative z-10">
+                          <ClassificationBadge level={agent.classification || 10} theme={theme} />
+                          <div className={`h-4 w-[1px] ${theme === 'dark' ? 'bg-white/10' : 'bg-[#141414]/10'}`} />
+                          <div className="flex items-center gap-1.5">
+                            <Brain className="w-3 h-3 opacity-50" />
+                            <span className="text-[10px] font-mono font-bold">{agent.model}</span>
+                          </div>
+                          <div className={`h-4 w-[1px] ${theme === 'dark' ? 'bg-white/10' : 'bg-[#141414]/10'}`} />
+                          <div className="flex items-center gap-1.5">
+                            <UserIcon className="w-3 h-3 opacity-50" />
+                            <span className="text-[10px] font-mono font-bold">{agent.persona || 'Standard'}</span>
                           </div>
                         </div>
 
@@ -3110,7 +3245,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
               >
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {agents.map((agent) => (
-                    <div key={agent.id} className={`p-6 border rounded-2xl ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-[#141414]/10'} space-y-6`}>
+                    <div key={agent.id} className={`p-6 border rounded-2xl ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white/50 border-[#141414]/10'} space-y-6`}>
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-4">
                           <div className={`w-12 h-12 rounded-xl border ${theme === 'dark' ? 'border-white/20 bg-white/10' : 'border-[#141414] bg-[#141414]/5'} flex items-center justify-center`}>
@@ -3212,7 +3347,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
 
                 {/* Log Table */}
                 <div className="col-span-9 space-y-4">
-                  <div className={`border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white'} rounded-2xl overflow-hidden`}>
+                  <div className={`border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white/50'} rounded-2xl overflow-hidden`}>
                     <div className={`grid grid-cols-7 p-4 border-b ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-[#141414]/5'} text-[10px] font-mono uppercase opacity-50`}>
                       <div className="col-span-1">Last Used</div>
                       <div className="col-span-1">Agent</div>
@@ -3264,6 +3399,297 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
           </motion.div>
         )}
 
+            {activeTab === 'family' && (
+              <motion.div
+                key="family"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="text-4xl font-bold tracking-tighter">Family Operations</h2>
+                  <div className="flex gap-2">
+                    <button className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${theme === 'light' ? 'border-[#141414] hover:bg-[#141414] hover:text-[#E4E3E0]' : 'border-white/10 hover:bg-white/10'}`}>
+                      Emergency Protocol
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setNewUser({ name: '', email: '', role: 'user', accessType: 'kid', status: 'active' });
+                        setShowAddUserModal(true);
+                      }}
+                      className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]'}`}
+                    >
+                      Add Member
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {users.map(user => (
+                    <div key={user.id} className={`p-6 border rounded-3xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]'}`}>
+                            <UserIcon className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold tracking-tight">{user.name}</h4>
+                            <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded ${user.accessType === 'adult' ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                              {user.accessType}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-center gap-1 text-emerald-500">
+                            <MapPin className="w-3 h-3" />
+                            <span className="text-[10px] font-mono">Home</span>
+                          </div>
+                          <span className="text-[8px] opacity-50 uppercase">Updated 2m ago</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className={`p-3 rounded-xl ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'} space-y-1`}>
+                          <p className="text-[9px] font-mono uppercase opacity-50">Contact</p>
+                          <div className="flex items-center gap-2 text-[10px] font-bold">
+                            <Phone className="w-3 h-3 opacity-50" />
+                            <span>Call</span>
+                          </div>
+                        </div>
+                        <div className={`p-3 rounded-xl ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'} space-y-1`}>
+                          <p className="text-[9px] font-mono uppercase opacity-50">Messages</p>
+                          <div className="flex items-center gap-2 text-[10px] font-bold">
+                            <Mail className="w-3 h-3 opacity-50" />
+                            <span>{user.name.split(' ')[0]}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-[10px] font-mono uppercase opacity-50">Upcoming Events</h5>
+                          <CalendarDays className="w-3 h-3 opacity-30" />
+                        </div>
+                        <div className="space-y-2">
+                          <div className={`p-2 rounded-lg text-[10px] border ${theme === 'light' ? 'bg-white border-[#141414]/5' : 'bg-white/5 border-white/5'}`}>
+                            <p className="font-bold">Dentist Appointment</p>
+                            <p className="opacity-50">Tomorrow, 10:00 AM</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-[10px] font-mono uppercase opacity-50">Jarvis Usage</h5>
+                          <Brain className="w-3 h-3 opacity-30" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[10px]">
+                            <span>Daily Quota</span>
+                            <span className="font-mono">75%</span>
+                          </div>
+                          <div className={`h-1 rounded-full overflow-hidden ${theme === 'light' ? 'bg-[#141414]/10' : 'bg-white/10'}`}>
+                            <div className="h-full bg-emerald-500 w-3/4" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <section className={`p-8 border rounded-3xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'}`}>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-serif italic text-2xl">Family Calendar</h3>
+                      <button className="text-xs font-bold underline">Add Event</button>
+                    </div>
+                    <div className="space-y-4">
+                      {[
+                        { date: 'Mar 22', title: 'Soccer Practice', time: '4:30 PM', person: 'Ryleigh' },
+                        { date: 'Mar 24', title: 'Piano Lesson', time: '5:00 PM', person: 'Sloane' },
+                        { date: 'Mar 25', title: 'Family Dinner', time: '7:00 PM', person: 'All' },
+                      ].map((event, i) => (
+                        <div key={i} className={`flex items-center gap-4 p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/5' : 'bg-white/5 border-white/5'}`}>
+                          <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center ${theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-white/10 text-white'}`}>
+                            <span className="text-[10px] font-mono uppercase">{event.date.split(' ')[0]}</span>
+                            <span className="text-sm font-bold">{event.date.split(' ')[1]}</span>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-bold">{event.title}</h4>
+                            <p className="text-xs opacity-50">{event.time} • {event.person}</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 opacity-30" />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className={`p-8 border rounded-3xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'}`}>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-serif italic text-2xl">Active Tasks</h3>
+                      <button className="text-xs font-bold underline">View All</button>
+                    </div>
+                    <div className="space-y-4">
+                      {[
+                        { title: 'Clean Playroom', person: 'Kids', status: 'pending' },
+                        { title: 'Grocery Shopping', person: 'Ken', status: 'completed' },
+                        { title: 'Homework Check', person: 'Ryleigh', status: 'pending' },
+                      ].map((task, i) => (
+                        <div key={i} className={`flex items-center gap-4 p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/5' : 'bg-white/5 border-white/5'}`}>
+                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${task.status === 'completed' ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-current opacity-30'}`}>
+                            {task.status === 'completed' && <CheckCircle2 className="w-4 h-4" />}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className={`text-sm font-bold ${task.status === 'completed' ? 'line-through opacity-50' : ''}`}>{task.title}</h4>
+                            <p className="text-xs opacity-50">Assigned to: {task.person}</p>
+                          </div>
+                          <CheckSquare className="w-4 h-4 opacity-30" />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'home' && (
+              <motion.div
+                key="home"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="text-4xl font-bold tracking-tighter text-pretty max-w-2xl">Home Automation Hub</h2>
+                  <div className="flex gap-4">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-mono uppercase">Home Assistant: Online</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-mono uppercase">Apple Home: Synced</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className={`p-6 border rounded-3xl space-y-4 ${theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'}`}>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold tracking-tight flex items-center gap-2">
+                        <Laptop className="w-4 h-4 text-orange-500" /> Home Assistant
+                      </h4>
+                      <span className="text-[8px] font-mono uppercase bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded border border-emerald-500/20">Connected</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-50">Entities</span>
+                        <span className="font-mono">142</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-50">Automations</span>
+                        <span className="font-mono">28</span>
+                      </div>
+                    </div>
+                    <button className={`w-full py-2 rounded-xl text-xs font-bold border transition-all ${
+                      theme === 'light' ? 'border-[#141414] hover:bg-[#141414] hover:text-white' : 'border-white/10 hover:bg-white/10'
+                    }`}>
+                      Open Dashboard
+                    </button>
+                  </div>
+
+                  <div className={`p-6 border rounded-3xl space-y-4 ${theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'}`}>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold tracking-tight flex items-center gap-2">
+                        <Home className="w-4 h-4 text-blue-500" /> Apple Home
+                      </h4>
+                      <span className="text-[8px] font-mono uppercase bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded border border-emerald-500/20">Connected</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-50">Accessories</span>
+                        <span className="font-mono">64</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-50">Scenes</span>
+                        <span className="font-mono">12</span>
+                      </div>
+                    </div>
+                    <button className={`w-full py-2 rounded-xl text-xs font-bold border transition-all ${
+                      theme === 'light' ? 'border-[#141414] hover:bg-[#141414] hover:text-white' : 'border-white/10 hover:bg-white/10'
+                    }`}>
+                      Manage HomeKit
+                    </button>
+                  </div>
+
+                  <div className={`p-6 border rounded-3xl space-y-4 ${theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'}`}>
+                    <h4 className="font-bold tracking-tight flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-emerald-500" /> Security Feed
+                    </h4>
+                    <div className="aspect-video bg-black rounded-xl overflow-hidden relative group">
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                        <Eye className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-rose-500 px-1.5 py-0.5 rounded text-[8px] font-bold text-white uppercase">
+                        <div className="w-1 h-1 rounded-full bg-white animate-pulse" /> Live
+                      </div>
+                      <img src="https://picsum.photos/seed/security/400/225" alt="Security Feed" className="w-full h-full object-cover opacity-50" referrerPolicy="no-referrer" />
+                    </div>
+                    <p className="text-[10px] font-mono uppercase opacity-40 text-center">Driveway Camera - 1080p</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <section className={`p-8 border rounded-3xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                    <h3 className="font-serif italic text-2xl">Smart Controls</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { name: 'Living Room Lights', status: 'On', brightness: '80%' },
+                        { name: 'Kitchen Pendant', status: 'Off', brightness: '0%' },
+                        { name: 'Master Bedroom', status: 'On', brightness: '30%' },
+                        { name: 'Exterior Flood', status: 'Off', brightness: '0%' },
+                      ].map(device => (
+                        <div key={device.name} className={`p-4 rounded-2xl border ${theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/5' : 'bg-white/5 border-white/5'} flex items-center justify-between`}>
+                          <div>
+                            <p className="text-sm font-bold">{device.name}</p>
+                            <p className="text-[10px] font-mono opacity-50 uppercase">{device.status} • {device.brightness}</p>
+                          </div>
+                          <button className={`w-10 h-5 rounded-full relative transition-colors ${device.status === 'On' ? 'bg-emerald-500' : 'bg-white/10'}`}>
+                            <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${device.status === 'On' ? 'right-1' : 'left-1'}`} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className={`p-8 border rounded-3xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                    <h3 className="font-serif italic text-2xl">Security Feed</h3>
+                    <div className="aspect-video rounded-2xl bg-black overflow-hidden relative group">
+                      <img 
+                        src="https://picsum.photos/seed/security/800/450" 
+                        alt="Security Feed" 
+                        className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                      <div className="absolute top-4 left-4 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                        <span className="text-[10px] font-mono uppercase text-white">Live • Front Door</span>
+                      </div>
+                      <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                        <div className="text-white">
+                          <p className="text-xs font-bold">Motion Detected</p>
+                          <p className="text-[8px] font-mono opacity-50 uppercase">2:14 PM • Haas Residence</p>
+                        </div>
+                        <button className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all">
+                          <Maximize2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </motion.div>
+            )}
             {activeTab === 'governance' && (
               <motion.div
                 key="governance"
@@ -3274,7 +3700,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {POLICIES.map((policy) => (
                     <div key={policy.id} className={`p-6 border rounded-2xl transition-colors ${
-                      theme === 'light' ? 'bg-white border-[#141414] shadow-sm' : 'bg-white/5 border-white/10'
+                      theme === 'light' ? 'bg-white/50 border-[#141414] shadow-sm' : 'bg-white/5 border-white/10'
                     }`}>
                       <div className="flex justify-between items-start mb-4">
                         <div className={`p-2 rounded-lg ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
@@ -3357,7 +3783,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
               >
                 {/* Agent Proof of Action Header */}
                 <div className={`p-8 border rounded-3xl transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${
-                  theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                  theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                 }`}>
                   <div className="flex items-center gap-6">
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
@@ -3510,7 +3936,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                 {/* Upload Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className={`lg:col-span-1 p-6 border rounded-2xl space-y-6 ${
-                    theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                    theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
                   }`}>
                     <div className="space-y-2">
                       <h4 className="font-bold tracking-tight">Ingest New Document</h4>
@@ -3573,7 +3999,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                   </div>
 
                   <div className={`lg:col-span-1 p-6 border rounded-2xl space-y-6 flex flex-col justify-between ${
-                    theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                    theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
                   }`}>
                     <div className="space-y-6">
                       <div className="space-y-2">
@@ -3588,6 +4014,37 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                         theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
                       }`}>
                         <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Cloud className="w-4 h-4 text-blue-400" />
+                            <span className="text-xs font-bold">iCloud Accounts</span>
+                          </div>
+                          <button className={`p-1 rounded-lg border ${theme === 'light' ? 'border-[#141414]/10 hover:bg-[#141414]/5' : 'border-white/10 hover:bg-white/5'}`}>
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {iCloudAccounts.map(account => (
+                            <div key={account.id} className={`p-2 rounded-lg border flex items-center justify-between ${
+                              theme === 'light' ? 'bg-white border-[#141414]/5' : 'bg-white/5 border-white/5'
+                            }`}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                  theme === 'light' ? 'bg-[#141414] text-white' : 'bg-blue-500/20 text-blue-400'
+                                }`}>
+                                  {account.email[0].toUpperCase()}
+                                </div>
+                                <span className="text-[10px] font-medium truncate max-w-[100px]">{account.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-mono opacity-50">{account.photoCount.toLocaleString()}</span>
+                                <div className={`w-1.5 h-1.5 rounded-full ${account.status === 'synced' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-white/5">
                           <div className="flex items-center gap-2">
                             <ImageIcon className="w-4 h-4 opacity-50" />
                             <span className="text-xs font-bold">AI Auto-Sorting</span>
@@ -3605,20 +4062,6 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                               className="absolute top-1 w-2 h-2 rounded-full bg-white" 
                             />
                           </button>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Server className="w-4 h-4 opacity-50" />
-                            <span className="text-xs font-bold">Unraid Destination</span>
-                          </div>
-                          <span className="text-[10px] font-mono opacity-50">/mnt/user/photos/ai_sorted</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <History className="w-4 h-4 opacity-50" />
-                            <span className="text-xs font-bold">Last Sync</span>
-                          </div>
-                          <span className="text-[10px] font-mono opacity-50">{lastICloudSync || 'Never'}</span>
                         </div>
                       </div>
 
@@ -3664,7 +4107,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                       <span className="text-[10px] font-mono opacity-50 uppercase">{documents.length} Documents</span>
                     </div>
                     <div className={`border rounded-xl overflow-hidden transition-colors ${
-                      theme === 'light' ? 'bg-white/30 border-[#141414]/10' : 'bg-white/5 border-white/10'
+                      theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
                     }`}>
                       <div className={`grid grid-cols-5 p-4 border-b text-[10px] font-mono uppercase opacity-50 ${
                         theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
@@ -3692,7 +4135,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                               }}
                               className={`text-[10px] font-mono border rounded px-1 py-0.5 focus:outline-none focus:ring-1 ${
                                 theme === 'light' 
-                                  ? 'bg-white border-[#141414]/20 focus:ring-[#141414]/20' 
+                                  ? 'bg-white/50 border-[#141414]/20 focus:ring-[#141414]/20' 
                                   : 'bg-[#141414] border-white/20 focus:ring-white/20'
                               }`}
                             >
@@ -3806,14 +4249,14 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                 <div className="flex items-center justify-between">
                   <h3 className="font-serif italic text-3xl">Financial Command</h3>
                   <div className="flex gap-4">
-                    <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                    <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
                       <PiggyBank className="w-4 h-4 text-emerald-500" />
                       <div>
                         <p className="text-[10px] font-mono opacity-50 uppercase">Total Savings</p>
                         <p className="text-sm font-bold">${(retirementData.currentSavings + financialGoals.reduce((acc, g) => acc + g.currentAmount, 0)).toLocaleString()}</p>
                       </div>
                     </div>
-                    <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                    <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
                       <TrendingUp className="w-4 h-4 text-blue-500" />
                       <div>
                         <p className="text-[10px] font-mono opacity-50 uppercase">Monthly Growth</p>
@@ -3825,7 +4268,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   {/* Monthly Budget */}
-                  <div className={`lg:col-span-1 p-6 border rounded-2xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                  <div className={`lg:col-span-1 p-6 border rounded-2xl space-y-6 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <h4 className="font-bold tracking-tight">Monthly Budget</h4>
@@ -3879,7 +4322,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {financialGoals.filter(g => g.type === 'short').map(goal => (
-                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-sm">{goal.title}</span>
                               <span className="text-[10px] font-mono opacity-50">{goal.deadline}</span>
@@ -3914,7 +4357,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {financialGoals.filter(g => g.type === 'long').map(goal => (
-                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                          <div key={goal.id} className={`p-4 border rounded-xl space-y-4 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-sm">{goal.title}</span>
                               <span className="text-[10px] font-mono opacity-50">{goal.deadline}</span>
@@ -3942,7 +4385,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     </div>
 
                     {/* Retirement Section */}
-                    <div className={`p-6 border rounded-2xl space-y-6 ${theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
+                    <div className={`p-6 border rounded-2xl space-y-6 ${theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'}`}>
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <h4 className="font-bold tracking-tight">Retirement Projection</h4>
@@ -4039,7 +4482,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
               >
                 {/* Budget & Target Header */}
                 <div className={`p-8 border rounded-3xl transition-all ${
-                  theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                  theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                 }`}>
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
@@ -4089,7 +4532,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     </div>
                   </div>
                   <div className={`p-6 border rounded-2xl h-[300px] transition-colors ${
-                    theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                    theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
                   }`}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={YEARLY_SPENDING_DATA}>
@@ -4133,7 +4576,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     { label: 'Active Subscriptions', value: `$${subscriptions.filter(s => s.status === 'active').reduce((acc, s) => acc + s.monthlyCost, 0).toFixed(2)}`, icon: Calendar, color: 'text-emerald-500' },
                   ].map((stat, i) => (
                     <div key={i} className={`p-6 border rounded-2xl transition-colors ${
-                      theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                      theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                     }`}>
                       <div className="flex items-center justify-between mb-4">
                         <div className={`p-2 rounded-lg ${theme === 'light' ? 'bg-[#141414]/5' : 'bg-white/5'}`}>
@@ -4158,7 +4601,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     </div>
                   </div>
                   <div className={`border rounded-xl overflow-hidden transition-colors ${
-                    theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                    theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
                   }`}>
                     <div className={`grid grid-cols-4 p-4 border-b text-[10px] font-mono uppercase opacity-50 ${
                       theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
@@ -4193,7 +4636,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                   <section className="space-y-4">
                     <h3 className="font-serif italic text-2xl">Node Power Consumption</h3>
                     <div className={`border rounded-xl overflow-hidden transition-colors ${
-                      theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                      theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
                     }`}>
                       <div className={`grid grid-cols-3 p-4 border-b text-[10px] font-mono uppercase opacity-50 ${
                         theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
@@ -4250,7 +4693,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     <div className="space-y-3">
                       {subscriptions.map(sub => (
                         <div key={sub.id} className={`p-4 border rounded-xl flex items-center justify-between transition-colors ${
-                          theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                          theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                         }`}>
                           <div className="flex items-center gap-4">
                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -4297,7 +4740,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
               >
                 {/* Security Agent Header */}
                 <div className={`p-8 border rounded-3xl transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${
-                  theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                  theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                 }`}>
                   <div className="flex items-center gap-6">
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
@@ -4329,7 +4772,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     <div className="space-y-4">
                       {vulnerabilities.map(vuln => (
                         <div key={vuln.id} className={`p-6 border rounded-2xl transition-all ${
-                          theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                          theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                         }`}>
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3">
@@ -4367,7 +4810,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     <div className="space-y-4">
                       <h3 className="font-serif italic text-2xl">Port Status</h3>
                       <div className={`border rounded-xl overflow-hidden transition-colors ${
-                        theme === 'light' ? 'bg-white border-[#141414]/10' : 'bg-white/5 border-white/10'
+                        theme === 'light' ? 'bg-white/50 border-[#141414]/10' : 'bg-white/5 border-white/10'
                       }`}>
                         <div className={`grid grid-cols-3 p-3 border-b text-[10px] font-mono uppercase opacity-50 ${
                           theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-white/5 border-white/10'
@@ -4398,7 +4841,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     <div className="space-y-4">
                       <h3 className="font-serif italic text-2xl">Security Mesh</h3>
                       <div className={`p-6 border rounded-2xl space-y-4 ${
-                        theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                        theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                       }`}>
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-mono uppercase opacity-50">mTLS Status</span>
@@ -4433,10 +4876,13 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                 key="errors"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6"
+                className="space-y-8"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-serif italic text-2xl">System Error Logs</h3>
+                  <div>
+                    <h3 className="font-serif italic text-2xl">System Error Logs</h3>
+                    <p className="text-sm opacity-50 mt-1">Real-time error tracking and AI-assisted resolution.</p>
+                  </div>
                   <div className="flex gap-2">
                     <button className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
                       theme === 'light' ? 'border-[#141414] hover:bg-[#141414] hover:text-[#E4E3E0]' : 'border-white/10 hover:bg-white/10'
@@ -4446,62 +4892,98 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  {errorLogs.map(log => (
-                    <div key={log.id} className={`p-6 border rounded-2xl transition-all flex flex-col md:flex-row justify-between gap-6 ${
-                      theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
-                    }`}>
-                      <div className="flex gap-4 flex-1">
-                        <div className={`p-3 rounded-xl h-fit ${
-                          log.severity === 'critical' ? 'bg-rose-500/10 text-rose-500' :
-                          log.severity === 'high' ? 'bg-orange-500/10 text-orange-500' :
-                          log.severity === 'medium' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500'
-                        }`}>
-                          <AlertCircle className="w-6 h-6" />
+                <div className="space-y-12">
+                  {nodes.map(node => {
+                    const nodeErrors = errorLogs.filter(log => log.nodeId === node.id);
+                    if (nodeErrors.length === 0) return null;
+                    
+                    return (
+                      <div key={node.id} className="space-y-4">
+                        <div className="flex items-center gap-3 border-b border-current/10 pb-2">
+                          <div className={`w-2 h-2 rounded-full ${node.status === 'online' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <h4 className="text-xs font-mono font-bold uppercase tracking-widest opacity-50">{node.name} — {node.ip}</h4>
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-3">
-                            <h4 className="font-bold tracking-tight">{log.source}</h4>
-                            <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded border ${
-                              log.severity === 'critical' ? 'border-rose-500/20 text-rose-500 bg-rose-500/5' :
-                              log.severity === 'high' ? 'border-orange-500/20 text-orange-500 bg-orange-500/5' : 'border-blue-500/20 text-blue-500 bg-blue-500/5'
+                        
+                        <div className="grid grid-cols-1 gap-4">
+                          {nodeErrors.map(log => (
+                            <div key={log.id} className={`p-6 border rounded-2xl transition-all flex flex-col lg:flex-row justify-between gap-6 ${
+                              theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                             }`}>
-                              {log.severity}
-                            </span>
-                          </div>
-                          <p className="text-sm opacity-70">{log.message}</p>
-                          <div className="flex items-center gap-4 mt-2">
-                            <span className="text-[10px] font-mono opacity-40 uppercase">{log.timestamp}</span>
-                            <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full ${
-                              log.status === 'open' ? 'bg-rose-500/10 text-rose-500' :
-                              log.status === 'investigating' ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'
-                            }`}>
-                              {log.status}
-                            </span>
-                          </div>
+                              <div className="flex gap-4 flex-1">
+                                <div className={`p-3 rounded-xl h-fit ${
+                                  log.severity === 'critical' ? 'bg-rose-500/10 text-rose-500' :
+                                  log.severity === 'high' ? 'bg-orange-500/10 text-orange-500' :
+                                  log.severity === 'medium' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500'
+                                }`}>
+                                  <AlertCircle className="w-6 h-6" />
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-3">
+                                    <h4 className="font-bold tracking-tight">{log.source}</h4>
+                                    <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded border ${
+                                      log.severity === 'critical' ? 'border-rose-500/20 text-rose-500 bg-rose-500/5' :
+                                      log.severity === 'high' ? 'border-orange-500/20 text-orange-500 bg-orange-500/5' : 'border-blue-500/20 text-blue-500 bg-blue-500/5'
+                                    }`}>
+                                      {log.severity}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm opacity-70">{log.message}</p>
+                                  
+                                  {/* AI Lookup Section */}
+                                  <div className={`mt-4 p-4 rounded-xl border border-dashed ${
+                                    theme === 'light' ? 'bg-[#141414]/5 border-[#141414]/10' : 'bg-emerald-500/5 border-emerald-500/20'
+                                  }`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Brain className="w-3 h-3 text-emerald-500" />
+                                      <span className="text-[10px] font-mono font-bold uppercase text-emerald-500">Jarvis AI Analysis</span>
+                                      <span className={`ml-auto text-[8px] font-mono px-1.5 py-0.5 rounded ${
+                                        log.severity === 'critical' ? 'bg-rose-500 text-white' :
+                                        log.severity === 'high' ? 'bg-orange-500 text-white' : 'bg-amber-500 text-white'
+                                      }`}>
+                                        RANK: {log.severity === 'critical' ? 'HIGH' : log.severity === 'high' ? 'MED' : 'LOW'}
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] leading-relaxed opacity-60 italic">
+                                      "Potential root cause: {log.source} resource exhaustion. Recommended action: Scale {node.name} memory allocation or restart the {log.source} container."
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-4 mt-4">
+                                    <span className="text-[10px] font-mono opacity-40 uppercase">{log.timestamp}</span>
+                                    <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full ${
+                                      log.status === 'open' ? 'bg-rose-500/10 text-rose-500' :
+                                      log.status === 'investigating' ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'
+                                    }`}>
+                                      {log.status}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex flex-col justify-between items-end gap-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-mono uppercase opacity-30">Assigned Agent:</span>
+                                  {log.assignedAgent ? (
+                                    <span className="text-xs font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-500">{log.assignedAgent}</span>
+                                  ) : (
+                                    <button className={`text-[10px] font-mono uppercase px-2 py-1 rounded border border-dashed transition-all ${
+                                      theme === 'light' ? 'border-[#141414]/20 hover:border-[#141414]' : 'border-white/20 hover:border-white'
+                                    }`}>
+                                      Assign Agent
+                                    </button>
+                                  )}
+                                </div>
+                                <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                  theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]'
+                                }`}>
+                                  Solve with Agent
+                                </button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <div className="flex flex-col justify-between items-end gap-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono uppercase opacity-30">Assigned Agent:</span>
-                          {log.assignedAgent ? (
-                            <span className="text-xs font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-500">{log.assignedAgent}</span>
-                          ) : (
-                            <button className={`text-[10px] font-mono uppercase px-2 py-1 rounded border border-dashed transition-all ${
-                              theme === 'light' ? 'border-[#141414]/20 hover:border-[#141414]' : 'border-white/20 hover:border-white'
-                            }`}>
-                              Assign Agent
-                            </button>
-                          )}
-                        </div>
-                        <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                          theme === 'light' ? 'bg-[#141414] text-[#E4E3E0]' : 'bg-emerald-500 text-[#0A0A0A]'
-                        }`}>
-                          Solve with Agent
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </motion.div>
             )}
@@ -4541,6 +5023,65 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                       {isResearching ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
                       {isResearching ? 'Jarvis Researching...' : 'Jarvis Research'}
                     </button>
+                  </div>
+                </div>
+
+                {/* Legal Structure Visualization */}
+                <div className={`p-8 border rounded-3xl ${theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'}`}>
+                  <h4 className="font-bold tracking-tight mb-8 flex items-center gap-2">
+                    <Network className="w-4 h-4 text-emerald-500" />
+                    Entity Relationship Map
+                  </h4>
+                  <div className="relative h-[400px] flex items-center justify-center overflow-hidden">
+                    {/* Connection Lines (SVG) */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" style={{ filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.2))' }}>
+                      <line x1="50%" y1="20%" x2="50%" y2="40%" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                      <line x1="50%" y1="40%" x2="30%" y2="60%" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                      <line x1="50%" y1="40%" x2="70%" y2="60%" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                      <line x1="30%" y1="60%" x2="30%" y2="80%" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                      <line x1="70%" y1="60%" x2="70%" y2="80%" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                    </svg>
+
+                    {/* Entity Nodes */}
+                    <div className="absolute top-[10%] left-1/2 -translate-x-1/2">
+                      <div className={`px-6 py-3 rounded-xl border text-center ${theme === 'light' ? 'bg-white border-[#141414] shadow-md' : 'bg-[#141414] border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]'}`}>
+                        <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Parent Entity</p>
+                        <p className="font-bold">Ohana Tech (WA)</p>
+                      </div>
+                    </div>
+
+                    <div className="absolute top-[35%] left-1/2 -translate-x-1/2">
+                      <div className={`px-6 py-3 rounded-xl border text-center ${theme === 'light' ? 'bg-white border-[#141414] shadow-md' : 'bg-[#141414] border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]'}`}>
+                        <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Subsidiary</p>
+                        <p className="font-bold">Ohana Tech (GA)</p>
+                      </div>
+                    </div>
+
+                    <div className="absolute top-[55%] left-[20%]">
+                      <div className={`px-6 py-3 rounded-xl border text-center ${theme === 'light' ? 'bg-white border-[#141414] shadow-md' : 'bg-[#141414] border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]'}`}>
+                        <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Trust Control</p>
+                        <p className="font-bold">Ohana Revocable Trust</p>
+                      </div>
+                    </div>
+
+                    <div className="absolute top-[55%] right-[20%]">
+                      <div className={`px-6 py-3 rounded-xl border text-center ${theme === 'light' ? 'bg-white border-[#141414] shadow-md' : 'bg-[#141414] border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]'}`}>
+                        <p className="text-[10px] font-mono uppercase opacity-50 mb-1">Asset Holding</p>
+                        <p className="font-bold">Land Trusts</p>
+                      </div>
+                    </div>
+
+                    <div className="absolute top-[75%] left-[20%]">
+                      <div className={`px-4 py-2 rounded-lg border border-dashed text-center opacity-60 ${theme === 'light' ? 'border-[#141414]/30' : 'border-white/20'}`}>
+                        <p className="text-[9px] font-mono uppercase">GA Assets</p>
+                      </div>
+                    </div>
+
+                    <div className="absolute top-[75%] right-[20%]">
+                      <div className={`px-4 py-2 rounded-lg border border-dashed text-center opacity-60 ${theme === 'light' ? 'border-[#141414]/30' : 'border-white/20'}`}>
+                        <p className="text-[9px] font-mono uppercase">Real Estate Portfolio</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -4614,7 +5155,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     </section>
 
                     <section className={`p-6 border rounded-2xl space-y-4 ${
-                      theme === 'light' ? 'border-[#141414] bg-white' : 'border-white/10 bg-white/5'
+                      theme === 'light' ? 'border-[#141414] bg-white/50' : 'border-white/10 bg-white/5'
                     }`}>
                       <h4 className="font-bold text-sm uppercase tracking-widest">Protection Score</h4>
                       <div className="flex items-center gap-4">
@@ -4754,7 +5295,11 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                     </div>
                     <button className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
                       theme === 'light' ? 'border-[#141414] hover:bg-[#141414] hover:text-[#E4E3E0]' : 'border-white/10 hover:bg-white/10'
-                    }`}>
+                    }`}
+                    onClick={() => {
+                      setNewUser({ name: '', email: '', role: 'user', accessType: 'adult', status: 'active' });
+                      setShowAddUserModal(true);
+                    }}>
                       <UserPlus className="w-4 h-4" /> Add User
                     </button>
                   </div>
@@ -4762,7 +5307,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                   <div className="grid grid-cols-1 gap-4">
                     {users.map(user => (
                       <div key={user.id} className={`p-6 border rounded-2xl transition-all flex items-center justify-between ${
-                        theme === 'light' ? 'bg-white border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
+                        theme === 'light' ? 'bg-white/50 border-[#141414]/10 shadow-sm' : 'bg-white/5 border-white/10'
                       }`}>
                         <div className="flex items-center gap-4">
                           <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${
@@ -4776,6 +5321,15 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                           </div>
                         </div>
                         <div className="flex items-center gap-12">
+                          <div className="text-center">
+                            <p className="text-[10px] font-mono uppercase opacity-30 mb-1">Access</p>
+                            <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
+                              user.accessType === 'adult' ? 'border-emerald-500/20 text-emerald-500 bg-emerald-500/5' : 
+                              user.accessType === 'kid' ? 'border-amber-500/20 text-amber-500 bg-amber-500/5' : 'border-blue-500/20 text-blue-500 bg-blue-500/5'
+                            }`}>
+                              {user.accessType}
+                            </span>
+                          </div>
                           <div className="text-center">
                             <p className="text-[10px] font-mono uppercase opacity-30 mb-1">Role</p>
                             <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
@@ -5507,8 +6061,26 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                         placeholder="Describe the agent's primary purpose..."
                         value={newAgentData.role}
                         onChange={(e) => setNewAgentData({...newAgentData, role: e.target.value})}
-                        className={`w-full ${theme === 'dark' ? 'bg-white/5 border-white/20 focus:ring-white/10' : 'bg-white border-[#141414] focus:ring-[#141414]/10'} border rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 h-32 resize-none`}
+                        className={`w-full ${theme === 'dark' ? 'bg-white/5 border-white/20 focus:ring-white/10' : 'bg-white border-[#141414] focus:ring-[#141414]/10'} border rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 h-24 resize-none`}
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase opacity-50">Agent Persona</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['Professional', 'Creative', 'Analytical', 'Concise'].map(p => (
+                          <button
+                            key={p}
+                            onClick={() => setNewAgentData({...newAgentData, persona: p})}
+                            className={`py-2 border rounded-xl text-xs font-bold transition-all ${
+                              newAgentData.persona === p 
+                                ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' 
+                                : theme === 'dark' ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-white border-[#141414]/10 hover:border-[#141414]'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -5525,6 +6097,10 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                           { id: 'web_scrape', label: 'Data Scraping', icon: FileText },
                           { id: 'lights_toggle', label: 'Home Control', icon: Zap },
                           { id: 'unraid_mount', label: 'Unraid Access', icon: HardDrive },
+                          { id: 'terminal_exec', label: 'Terminal Access', icon: Terminal },
+                          { id: 'email_send', label: 'Email Dispatch', icon: Mail },
+                          { id: 'calendar_sync', label: 'Calendar Sync', icon: Calendar },
+                          { id: 'weather_api', label: 'Weather Data', icon: Cloud },
                         ].map(tool => (
                           <button
                             key={tool.id}
@@ -5563,7 +6139,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                             className={`flex-1 py-3 border rounded-xl font-mono text-sm transition-all ${
                               newAgentData.classification === level 
                                 ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' 
-                                : theme === 'dark' ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-white border-[#141414]/10 hover:border-[#141414]'
+                                : theme === 'dark' ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-white/50 border-[#141414]/10 hover:border-[#141414]'
                             }`}
                           >
                             T{level}
@@ -5584,7 +6160,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                             className={`flex-1 py-3 border rounded-xl font-mono text-xs uppercase transition-all flex flex-col items-center gap-1 ${
                               newAgentData.defaultTaskPriority === p 
                                 ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' 
-                                : theme === 'dark' ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-white border-[#141414]/10 hover:border-[#141414]'
+                                : theme === 'dark' ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-white/50 border-[#141414]/10 hover:border-[#141414]'
                             }`}
                           >
                             <div className={`w-1.5 h-1.5 rounded-full ${
@@ -5606,7 +6182,7 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                             className={`p-3 border rounded-xl text-xs font-bold transition-all ${
                               newAgentData.model === model 
                                 ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' 
-                                : theme === 'dark' ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-white border-[#141414]/10 hover:border-[#141414]'
+                                : theme === 'dark' ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-white/50 border-[#141414]/10 hover:border-[#141414]'
                             }`}
                           >
                             {model}
@@ -5614,12 +6190,27 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                         ))}
                       </div>
                     </div>
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-mono uppercase opacity-50">Memory Limit (Context Window)</label>
+                      <div className="flex items-center gap-4">
+                        <input 
+                          type="range" 
+                          min="1024" 
+                          max="32768" 
+                          step="1024"
+                          value={newAgentData.memoryLimit}
+                          onChange={(e) => setNewAgentData({...newAgentData, memoryLimit: parseInt(e.target.value)})}
+                          className="flex-1 accent-[#141414]"
+                        />
+                        <span className="text-xs font-mono font-bold w-16 text-right">{Math.round((newAgentData.memoryLimit || 2048) / 1024)}GB</span>
+                      </div>
+                    </div>
                   </motion.div>
                 )}
 
                 {wizardStep === 4 && (
                   <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
-                    <div className={`p-6 border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white'} rounded-2xl space-y-4`}>
+                    <div className={`p-6 border ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-[#141414] bg-white/50'} rounded-2xl space-y-4`}>
                       <div className="flex justify-between items-start">
                         <div>
                           <h5 className="text-xl font-bold tracking-tighter">{newAgentData.name || 'Untitled Agent'}</h5>
@@ -5636,6 +6227,14 @@ QyNTUxOQAAACD8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8X8AAAAsX8X8X8X8X
                         <div>
                           <p className="text-[9px] font-mono uppercase opacity-50 mb-1">Tools Enabled</p>
                           <p className="text-xs font-bold">{newAgentData.allowedTools?.length || 0} Toolsets</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-mono uppercase opacity-50 mb-1">Persona</p>
+                          <p className="text-xs font-bold">{newAgentData.persona}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-mono uppercase opacity-50 mb-1">Memory Allocation</p>
+                          <p className="text-xs font-bold">{Math.round((newAgentData.memoryLimit || 2048) / 1024)}GB VRAM</p>
                         </div>
                       </div>
                     </div>

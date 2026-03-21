@@ -54,6 +54,8 @@ export interface Agent {
   lastSecurityScan?: string;
   networkActivity?: NetworkActivity;
   defaultTaskPriority: 'low' | 'medium' | 'high';
+  persona?: string;
+  memoryLimit?: number; // in MB
 }
 
 export interface ToolUsage {
@@ -118,6 +120,7 @@ export interface ErrorLog {
   id: string;
   timestamp: string;
   source: string;
+  nodeId?: string;
   message: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   status: 'open' | 'investigating' | 'resolved';
@@ -129,8 +132,17 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'user' | 'guest';
+  accessType: 'adult' | 'kid' | 'guest';
   status: 'active' | 'inactive';
   lastLogin: string;
+}
+
+export interface ICloudAccount {
+  id: string;
+  email: string;
+  status: 'synced' | 'syncing' | 'error';
+  lastSync: string;
+  photoCount: number;
 }
 
 export interface MatrixRoute {
